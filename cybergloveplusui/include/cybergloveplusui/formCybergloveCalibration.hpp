@@ -3,7 +3,7 @@
 
 #include <QDialog>
 #include <QDebug>
-#include "../ui_cyberglove_calib.h"
+#include "../../build/ui_cyberglove_calib.h"
 #include "cybergloveplusui/qnode.hpp"
 #include <QTimer>
 
@@ -42,7 +42,7 @@ private:
 //signals:
 //    void SendDesiredGloveStateFromGUI(GloveState);
 
-public slots:    
+public slots:
 	void readGUI();
 	void refreshGUI();
 	void refresh_receive_ros();
