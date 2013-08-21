@@ -23,7 +23,7 @@
  */
 
 #include "cyberglove/serial_glove.hpp"
-
+#include <ros/console.h>
 #include <iostream>
 
 namespace cyberglove_freq
@@ -37,7 +37,7 @@ namespace cyberglove_freq
 
 namespace cyberglove
 {
-  const unsigned short CybergloveSerial::glove_size = 22;
+  const unsigned short CybergloveSerial::glove_size = 17;
 
   CybergloveSerial::CybergloveSerial(std::string serial_port, boost::function<void(std::vector<float>, bool)> callback) :
     nb_msgs_received(0), glove_pos_index(0), current_value(0), light_on(true), button_on(true), no_errors(true)
@@ -54,6 +54,7 @@ namespace cyberglove
 
     //set the callback function
     callback_function = callback;
+
   }
 
   CybergloveSerial::~CybergloveSerial()
@@ -67,12 +68,12 @@ namespace cyberglove
   {
     if( value ) //Filtering will be on
     {
-      cereal_port->write("f 1\r", 4);
+      //cereal_port->write("f 1\r", 4);
       std::cout << " - Data filtered" << std::endl;
     }
     else // Filtering off
     {
-      cereal_port->write("f 0\r", 4);
+      //cereal_port->write("f 0\r", 4);
       std::cout << " - Data not filtered" << std::endl;
     }
     cereal_port->flush();
@@ -87,12 +88,12 @@ namespace cyberglove
   {
     if( value ) //transmit info will be on
     {
-      cereal_port->write("u 1\r", 4);
+      //cereal_port->write("U,1", 3);
       std::cout << " - Additional info transmitted" << std::endl;
     }
     else // transmit info off
     {
-      cereal_port->write("u 0\r", 4);
+      //cereal_port->write("U,0", 3);
       std::cout << " - Additional info not transmitted" << std::endl;
     }
     cereal_port->flush();
@@ -105,8 +106,8 @@ namespace cyberglove
 
   int CybergloveSerial::set_frequency(std::string frequency)
   {
-    cereal_port->write(frequency.c_str(), frequency.size());
-    cereal_port->flush();
+    //cereal_port->write(frequency.c_str(), frequency.size());
+    //cereal_port->flush();
 
     //wait for the command to be applied
     sleep(1);
@@ -121,6 +122,7 @@ namespace cyberglove
 
     //start streaming by writing S to the serial port
     cereal_port->write("S", 1);
+        sleep(1);
     cereal_port->flush();
 
     return 0;
@@ -128,6 +130,10 @@ namespace cyberglove
 
   void CybergloveSerial::stream_callback(char* world, int length)
   {
+
+
+
+
     //read each received char.
     for (int i = 0; i < length; ++i)
     {
@@ -148,6 +154,7 @@ namespace cyberglove
         switch( glove_pos_index )
         {
         case glove_size:
+   	  //std::cout << "status "<< glove_pos_index << std::endl;
           //the last char of the msg is the status byte
 
           //the status bit 1 corresponds to the button
@@ -167,6 +174,7 @@ namespace cyberglove
           //the last char of the line should be 0
           //if it is 0, then the full message has been received,
           //and we call the callback function.
+   	  //std::cout << "null end "<< glove_pos_index << std::endl;
           if( current_value == 0 && no_errors)
             callback_function(glove_positions, light_on);
           break;
@@ -176,8 +184,10 @@ namespace cyberglove
           //the value in the message should never be 0.
           if( current_value == 0)
             no_errors = false;
+	   
           // the values sent by the glove are in the range [1;254]
           //   -> we convert them to float in the range [0;1]
+   	  //std::cout << "glove_pos_index "<< glove_pos_index << " " << current_value << std::endl;
           glove_positions[glove_pos_index] = (((float)current_value) - 1.0f) / 254.0f;
           break;
         }
