@@ -74,7 +74,11 @@ namespace cyberglove{
     ROS_INFO("Opening glove on port: %s", path_to_glove.c_str());
 
     //initialize the connection with the cyberglove and binds the callback function
-    serial_glove = boost::shared_ptr<CybergloveSerial>(new CybergloveSerial(path_to_glove, boost::bind(&CyberglovePublisher::glove_callback, this, _1, _2)));
+    boost::function<void(std::vector<float>, bool)> callback_function = boost::bind(&CyberglovePublisher::glove_callback, this, _1, _2);
+    serial_glove = boost::shared_ptr<CybergloveSerial>(new CybergloveSerial(path_to_glove, callback_function));
+
+    std::cout << "CyberglovePublisher() this: " << this << std::endl;
+    std::cout << "CyberglovePublisher() callback_function: " << callback_function << std::endl;
 
     int res = -1;
     cyberglove_freq::CybergloveFreq frequency;
@@ -97,12 +101,8 @@ namespace cyberglove{
       res = serial_glove->set_frequency(frequency.hundred_hz);
       break;
     }
-    //No filtering: we're oversampling the data, we want a fast poling rate
-    res = serial_glove->set_filtering(false);
-    //We want the glove to transmit the status (light on/off)
-    res = serial_glove->set_transmit_info(true);
-    //start reading the data.
-    res = serial_glove->start_stream();
+
+// isobe - moved from here, 2013-09-03
 
     //publishes calibrated JointState messages
     std::string prefix;
@@ -123,26 +123,56 @@ namespace cyberglove{
     jointstate_msg.name.push_back("G_ThumbMPJ");
     jointstate_msg.name.push_back("G_ThumbIJ");
     jointstate_msg.name.push_back("G_ThumbAb");
+
     jointstate_msg.name.push_back("G_IndexMPJ");
     jointstate_msg.name.push_back("G_IndexPIJ");
-    jointstate_msg.name.push_back("G_IndexDIJ");
+//    jointstate_msg.name.push_back("G_IndexDIJ");
+
     jointstate_msg.name.push_back("G_MiddleMPJ");
     jointstate_msg.name.push_back("G_MiddlePIJ");
-    jointstate_msg.name.push_back("G_MiddleDIJ");
+//    jointstate_msg.name.push_back("G_MiddleDIJ");
+
     jointstate_msg.name.push_back("G_MiddleIndexAb");
+
     jointstate_msg.name.push_back("G_RingMPJ");
     jointstate_msg.name.push_back("G_RingPIJ");
-    jointstate_msg.name.push_back("G_RingDIJ");
+//    jointstate_msg.name.push_back("G_RingDIJ");
+
     jointstate_msg.name.push_back("G_RingMiddleAb");
+
     jointstate_msg.name.push_back("G_PinkieMPJ");
     jointstate_msg.name.push_back("G_PinkiePIJ");
-    jointstate_msg.name.push_back("G_PinkieDIJ");
+//    jointstate_msg.name.push_back("G_PinkieDIJ");
+
     jointstate_msg.name.push_back("G_PinkieRingAb");
+
     jointstate_msg.name.push_back("G_PalmArch");
+
     jointstate_msg.name.push_back("G_WristPitch");
     jointstate_msg.name.push_back("G_WristYaw");
 
-    jointstate_raw_msg.name = jointstate_msg.name;
+    std::cout << " joint name[0] " << jointstate_msg.name[0] << std::endl;
+    std::cout << "this "<< this << " name.size()= " << jointstate_msg.name.size() << std::endl;
+
+jointstate_raw_msg.name = jointstate_msg.name;
+
+
+/*
+    isobe - moved to here, 2013-09-03
+
+    serial_glove->start_stream() statrs calling CybergloveSerial::stream_callback().
+    However, the initalization of jointstate_msg.name is does not done yet.
+    Because CerialPort class (part of ROS) starts new thread to reading serial port,
+    glove_callback() called asynchronously, then clashed.
+*/
+
+    //No filtering: we're oversampling the data, we want a fast poling rate
+    res = serial_glove->set_filtering(false);
+    //We want the glove to transmit the status (light on/off)
+    res = serial_glove->set_transmit_info(true);
+    //start reading the data.
+    res = serial_glove->start_stream();
+
   }
 
   CyberglovePublisher::~CyberglovePublisher()
@@ -177,15 +207,16 @@ namespace cyberglove{
   void CyberglovePublisher::glove_callback(std::vector<float> glove_pos, bool light_on)
   {
     //if the light is off, we don't publish any data.
-    if( !light_on )
+  /*  if( !light_on )
     {
       publishing = false;
       ROS_DEBUG("The glove button is off, no data will be read / sent");
       ros::spinOnce();
       sampling_rate.sleep();
       return;
-    }
+    } */
     publishing = true;
+
 
     //appends the current position to the vector of position
     glove_positions.push_back( glove_pos );
@@ -193,6 +224,7 @@ namespace cyberglove{
     //if we've enough samples, publish the data:
     if( publish_counter_index == publish_counter_max )
     {
+
       //reset the messages
       jointstate_msg.position.clear();
       jointstate_msg.velocity.clear();
@@ -202,6 +234,7 @@ namespace cyberglove{
       //fill the joint_state msg with the averaged glove data
       for(unsigned int index_joint = 0; index_joint < CybergloveSerial::glove_size; ++index_joint)
       {
+
         //compute the average over the samples for the current joint
         float averaged_value = 0.0f;
         for (unsigned int index_sample = 0; index_sample < publish_counter_max; ++index_sample)
@@ -209,10 +242,16 @@ namespace cyberglove{
           averaged_value += glove_positions[index_sample][index_joint];
         }
         averaged_value /= publish_counter_max;
-
+     	  std::cout << "this "<< this << " name.size()= " << jointstate_msg.name.size() << std::endl;
+  	  std::cout << "index_joint "<< index_joint << " this " << jointstate_msg.name.size() << std::endl;
+   	  std::cout << "ok here 1 "<< index_joint << std::endl;
         jointstate_raw_msg.position.push_back(averaged_value);
+   	  std::cout << "index_joint "<< index_joint << " joint name " << jointstate_msg.name[index_joint] << std::endl;
         add_jointstate(averaged_value, jointstate_msg.name[index_joint]);
+
+   	  std::cout << "ok here 3 "<< index_joint << std::endl;
       }
+   	  std::cout << "ok here 4"<< std::endl;
 
       //publish the msgs
       cyberglove_pub.publish(jointstate_msg);

@@ -189,7 +189,7 @@ namespace xml_calibration_parser{
       //order the calibration vector by ascending values of raw_value
       //      ROS_ERROR("TODO: calibration vector not ordered yet");
 
-      std::cout << "lookup table : ";
+ //     std::cout << "lookup table : ";
 
       //setup the lookup table
       for( unsigned int index_lookup = 0;
@@ -197,11 +197,11 @@ namespace xml_calibration_parser{
 	   ++ index_lookup )
 	{
 	  float value = compute_lookup_value(index_lookup, calib);
-	  std::cout << index_lookup<<":"<<value << " ";
+//	  std::cout << index_lookup<<":"<<value << " ";
 	  lookup_table[index_lookup] = value;
 	}
 
-      std::cout << std::endl;
+//      std::cout << std::endl;
 
       //add the values to the map
       joints_calibrations_map[name] = lookup_table;

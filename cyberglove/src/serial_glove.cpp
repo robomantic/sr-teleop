@@ -37,7 +37,7 @@ namespace cyberglove_freq
 
 namespace cyberglove
 {
-  const unsigned short CybergloveSerial::glove_size = 17;
+  const unsigned short CybergloveSerial::glove_size = 18;
 
   CybergloveSerial::CybergloveSerial(std::string serial_port, boost::function<void(std::vector<float>, bool)> callback) :
     nb_msgs_received(0), glove_pos_index(0), current_value(0), light_on(true), button_on(true), no_errors(true)
@@ -54,6 +54,9 @@ namespace cyberglove
 
     //set the callback function
     callback_function = callback;
+
+    std::cout << "CybergloveSerial() this: " << this << std::endl;
+    std::cout << "CybergloveSerial() callback_function: " << callback << std::endl;
 
   }
 
@@ -145,6 +148,7 @@ namespace cyberglove
         ++nb_msgs_received;
         //reset the index to 0
         glove_pos_index = 0;
+	std::cout << "S start "<< glove_pos_index << std::endl;
         //reset no_errors to true for the new message
         no_errors = true;
         break;
@@ -153,12 +157,12 @@ namespace cyberglove
         //this is a glove sensor value, a status byte or a "message end"
         switch( glove_pos_index )
         {
-        case glove_size:
+  /*      case glove_size:
    	  //std::cout << "status "<< glove_pos_index << std::endl;
           //the last char of the msg is the status byte
 
           //the status bit 1 corresponds to the button
-          if(current_value & 2)
+         if(current_value & 2)
             button_on = true;
           else
             button_on = false;
@@ -169,12 +173,15 @@ namespace cyberglove
             light_on = false;
 
           break;
+*/
 
-        case glove_size + 1:
+        case glove_size:
           //the last char of the line should be 0
           //if it is 0, then the full message has been received,
           //and we call the callback function.
-   	  //std::cout << "null end "<< glove_pos_index << std::endl;
+          button_on = true;
+          light_on = true;
+   	  std::cout << "null end "<< glove_pos_index << std::endl;
           if( current_value == 0 && no_errors)
             callback_function(glove_positions, light_on);
           break;
@@ -187,7 +194,7 @@ namespace cyberglove
 	   
           // the values sent by the glove are in the range [1;254]
           //   -> we convert them to float in the range [0;1]
-   	  //std::cout << "glove_pos_index "<< glove_pos_index << " " << current_value << std::endl;
+   	  std::cout << "glove_pos_index "<< glove_pos_index << " " << current_value << std::endl;
           glove_positions[glove_pos_index] = (((float)current_value) - 1.0f) / 254.0f;
           break;
         }
