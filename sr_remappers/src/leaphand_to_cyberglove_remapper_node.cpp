@@ -1,5 +1,5 @@
 /**
- * @file   shadowhand_to_leaphand_remapper_node.cpp
+ * @file   leaphand_to_cyberglove_remapper_node.cpp
  * @author Ugo Cupcic <ugo@shadowrobot.com>, Contact <contact@shadowrobot.com>
  * @date   Thu May 13 10:39:44 2010
  *
@@ -19,17 +19,17 @@
 * You should have received a copy of the GNU General Public License along
 * with this program.  If not, see <http://www.gnu.org/licenses/>.
 *
- * @brief Launch a ros node to remap data coming from the Leaphand to the Dextrous Hand.
+ * @brief Launch a ros node to remap data coming from the Cyberglove to the Dextrous Hand.
  *
  *
  */
 
 #include <ros/ros.h>
 
-#include "sr_remappers/shadowhand_to_leaphand_remapper.h"
+#include "sr_remappers/leaphand_to_cyberglove_remapper.h"
 
 using namespace ros;
-using namespace shadowhand_to_leaphand_remapper;
+using namespace leaphand_to_cyberglove_remapper;
 
   /////////////////////////////////
   //           MAIN              //
@@ -38,9 +38,9 @@ using namespace shadowhand_to_leaphand_remapper;
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "leaphand_remapper");
+  ros::init(argc, argv, "cyberglove_remapper");
 
-  ShadowhandToLeaphandRemapper remapper;
+  LeaphandToCybergloveRemapper remapper;
   ros::spin();
 
   return 0;

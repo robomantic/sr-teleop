@@ -85,15 +85,27 @@ add_executable(cyberglove_remapper
   src/shadowhand_to_cyberglove_remapper_node.cpp
   src/calibration_parser.cpp
 )
+add_executable(leaphand_cyberglove_remapper
+  src/leaphand_to_cyberglove_remapper.cpp
+  src/leaphand_to_cyberglove_remapper_node.cpp
+  src/calibration_parser.cpp
+)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 add_dependencies(cyberglove_remapper
   ${catkin_EXPORTED_TARGETS}
 )
+add_dependencies(leaphand_cyberglove_remapper
+  ${catkin_EXPORTED_TARGETS}
+)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(cyberglove_remapper
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+target_link_libraries(leaphand_cyberglove_remapper
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )

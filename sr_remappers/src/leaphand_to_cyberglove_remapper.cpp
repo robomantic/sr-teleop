@@ -1,5 +1,5 @@
 /**
- * @file   shadowhand_to_leaphand_remapper.cpp
+ * @file   leaphand_to_cyberglove_remapper.cpp
  * @author Ugo Cupcic <ugo@shadowrobot.com>, Contact <contact@shadowrobot.com>
  * @date   Thu May 13 09:44:52 2010
  *
@@ -33,46 +33,46 @@
 #include <string>
 
 //own .h
-#include "sr_remappers/shadowhand_to_leaphand_remapper.h"
+#include "sr_remappers/leaphand_to_cyberglove_remapper.h"
 #include <sr_robot_msgs/sendupdate.h>
 #include <sr_robot_msgs/joint.h>
 using namespace ros;
 
-namespace shadowhand_to_leaphand_remapper
+namespace leaphand_to_cyberglove_remapper
 {
 
-const unsigned int ShadowhandToLeaphandRemapper::number_hand_joints = 20;
+const unsigned int LeaphandToCybergloveRemapper::number_hand_joints = 20;
 
-ShadowhandToLeaphandRemapper::ShadowhandToLeaphandRemapper() :
+LeaphandToCybergloveRemapper::LeaphandToCybergloveRemapper() :
     n_tilde("~")
 {
     joints_names.resize(number_hand_joints);
-    ShadowhandToLeaphandRemapper::init_names();
+    LeaphandToCybergloveRemapper::init_names();
 
     std::string param;
     std::string path;
-    n_tilde.searchParam("leaphand_mapping_path", param);
+    n_tilde.searchParam("cyberglove_mapping_path", param);
     n_tilde.param(param, path, std::string());
     calibration_parser = new CalibrationParser(path);
-    ROS_INFO("Mapping file loaded for the Leaphand: %s", path.c_str());
+    ROS_INFO("Mapping file loaded for the Cyberglove: %s", path.c_str());
 
     std::string prefix;
     std::string searched_param;
-    n_tilde.searchParam("leaphand_prefix", searched_param);
+    n_tilde.searchParam("cyberglove_prefix", searched_param);
     n_tilde.param(searched_param, prefix, std::string());
 
     std::string full_topic = prefix + "/calibrated/joint_states";
 
-    leaphand_jointstates_sub = node.subscribe(full_topic, 10, &ShadowhandToLeaphandRemapper::jointstatesCallback, this);
+    cyberglove_jointstates_sub = node.subscribe(full_topic, 10, &LeaphandToCybergloveRemapper::jointstatesCallback, this);
 
     n_tilde.searchParam("sendupdate_prefix", searched_param);
     n_tilde.param(searched_param, prefix, std::string());
     full_topic = prefix + "sendupdate";
 
-    shadowhand_pub = node.advertise<sr_robot_msgs::sendupdate> (full_topic, 5);
+    leaphand_pub = node.advertise<sr_robot_msgs::sendupdate> (full_topic, 5);
 }
 
-void ShadowhandToLeaphandRemapper::init_names()
+void LeaphandToCybergloveRemapper::init_names()
 {
     joints_names[0] = "THJ1";
     joints_names[1] = "THJ2";
@@ -96,7 +96,7 @@ void ShadowhandToLeaphandRemapper::init_names()
     joints_names[19] = "WRJ2";
 }
 
-void ShadowhandToLeaphandRemapper::jointstatesCallback( const sensor_msgs::JointStateConstPtr& msg )
+void LeaphandToCybergloveRemapper::jointstatesCallback( const sensor_msgs::JointStateConstPtr& msg )
 {
     sr_robot_msgs::joint joint;
     sr_robot_msgs::sendupdate pub;
@@ -115,6 +115,6 @@ void ShadowhandToLeaphandRemapper::jointstatesCallback( const sensor_msgs::Joint
     }
     pub.sendupdate_length = number_hand_joints;
     pub.sendupdate_list = table;
-    shadowhand_pub.publish(pub);
+    leaphand_pub.publish(pub);
 }
 }//end namespace
