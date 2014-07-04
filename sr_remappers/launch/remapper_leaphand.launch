@@ -6,6 +6,6 @@
     value="/leaphand/" />
     <param name="sendupdate_prefix" type="string"
     value="/srh/" />
-    <param name="leaphand_mapping_path" type="string" value="$(find sr_leaphand_config)/mappings/LeapHandToHandMappings_generic" />
+    <param name="leaphand_mapping_path" type="string" value="$(find leap_hand_urdf)/mappings/LeapHandToHandMappings_generic" />
   </node>
 </launch>
