@@ -28,20 +28,20 @@
 
 //ROS include
 #include <ros/ros.h>
+#include <sensor_msgs/JointState.h>
 
 //generic include
 #include <string>
 
 //own .h
 #include "sr_remappers/leaphand_to_cyberglove_remapper.h"
-#include <sr_robot_msgs/sendupdate.h>
 #include <sr_robot_msgs/joint.h>
 using namespace ros;
 
 namespace leaphand_to_cyberglove_remapper
 {
 
-const unsigned int LeaphandToCybergloveRemapper::number_hand_joints = 20;
+const unsigned int LeaphandToCybergloveRemapper::number_hand_joints = 3;
 
 LeaphandToCybergloveRemapper::LeaphandToCybergloveRemapper() :
     n_tilde("~")
@@ -65,11 +65,11 @@ LeaphandToCybergloveRemapper::LeaphandToCybergloveRemapper() :
 
     cyberglove_jointstates_sub = node.subscribe(full_topic, 10, &LeaphandToCybergloveRemapper::jointstatesCallback, this);
 
-    n_tilde.searchParam("sendupdate_prefix", searched_param);
-    n_tilde.param(searched_param, prefix, std::string());
-    full_topic = prefix + "sendupdate";
+    // n_tilde.searchParam("sendupdate_prefix", searched_param);
+    // n_tilde.param(searched_param, prefix, std::string());
+    // full_topic = prefix + "sendupdate";
 
-    leaphand_pub = node.advertise<sr_robot_msgs::sendupdate> (full_topic, 5);
+    leaphand_pub = node.advertise<sensor_msgs::JointState> ("/leap_hand_joint_states", 5);
 }
 
 void LeaphandToCybergloveRemapper::init_names()
@@ -77,34 +77,17 @@ void LeaphandToCybergloveRemapper::init_names()
     joints_names[0] = "THJ1";
     joints_names[1] = "THJ2";
     joints_names[2] = "THJ3";
-    joints_names[3] = "THJ4";
-    joints_names[4] = "THJ5";
-    joints_names[5] = "FFJ0";
-    joints_names[6] = "FFJ3";
-    joints_names[7] = "FFJ4";
-    joints_names[8] = "MFJ0";
-    joints_names[9] = "MFJ3";
-    joints_names[10] = "MFJ4";
-    joints_names[11] = "RFJ0";
-    joints_names[12] = "RFJ3";
-    joints_names[13] = "RFJ4";
-    joints_names[14] = "LFJ0";
-    joints_names[15] = "LFJ3";
-    joints_names[16] = "LFJ4";
-    joints_names[17] = "LFJ5";
-    joints_names[18] = "WRJ1";
-    joints_names[19] = "WRJ2";
 }
 
 void LeaphandToCybergloveRemapper::jointstatesCallback( const sensor_msgs::JointStateConstPtr& msg )
 {
     sr_robot_msgs::joint joint;
-    sr_robot_msgs::sendupdate pub;
+    sensor_msgs::JointState pub;
 
     //Do conversion
     std::vector<double> vect = calibration_parser->get_remapped_vector(msg->position);
-    //Generate sendupdate message
-    pub.sendupdate_length = number_hand_joints;
+    //Generate sensor_msgs::JointState message
+    // pub.sendupdate_length = number_hand_joints;
 
     std::vector<sr_robot_msgs::joint> table(number_hand_joints);
     for(unsigned int i = 0; i < number_hand_joints; ++i )
@@ -113,8 +96,9 @@ void LeaphandToCybergloveRemapper::jointstatesCallback( const sensor_msgs::Joint
         joint.joint_target = vect[i];
         table[i] = joint;
     }
-    pub.sendupdate_length = number_hand_joints;
-    pub.sendupdate_list = table;
-    leaphand_pub.publish(pub);
+
+    // pub.sendupdate_length = number_hand_joints;
+    // pub.sendupdate_list = table;
+    // leaphand_pub.publish(pub);
 }
 }//end namespace
