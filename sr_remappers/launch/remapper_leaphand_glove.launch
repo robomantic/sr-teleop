@@ -1,11 +1,6 @@
 <launch>
   <!-- shadowhand to cybergrasp remapper -->
-  <node pkg="sr_remappers" name="leaphand_remapper"
-	type="leaphand_remapper">
-    <param name="leaphand_prefix" type="string"
-    value="/leaphand/" />
-    <param name="sendupdate_prefix" type="string"
-    value="/srh/" />
-    <param name="leaphand_mapping_path" type="string" value="$(find leap_hand_urdf)/mappings/LeapHandToHandMappings_generic" />
+  <node pkg="sr_remappers" name="leaphand_cyberglove_remapper" type="leaphand_cyberglove_remapper">
+    <param name="leaphand_cyberglove_mapping_path" type="string" value="$(find leap_hand_urdf)/mappings/LeapHandToHandMappings_generic" />
   </node>
 </launch>
