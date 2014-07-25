@@ -3,22 +3,22 @@
  * @author Ugo Cupcic <ugo@shadowrobot.com>, Contact <contact@shadowrobot.com>
  * @date   Thu Apr 22 10:25:55 2010
  *
-*
-* Copyright 2011 Shadow Robot Company Ltd.
-*
-* This program is free software: you can redistribute it and/or modify it
-* under the terms of the GNU General Public License as published by the Free
-* Software Foundation, either version 2 of the License, or (at your option)
-* any later version.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License along
-* with this program.  If not, see <http://www.gnu.org/licenses/>.
-*
+ *
+ * Copyright 2011 Shadow Robot Company Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  * @brief The goal of this ROS publisher is to publish raw and calibrated
  * joint positions from the cyberglove at a regular time interval. We're
  * oversampling to get a better accuracy on our data.
@@ -29,7 +29,7 @@
  */
 
 #ifndef   	CYBERGLOVE_PUBLISHER_H_
-# define   	CYBERGLOVE_PUBLISHER_H_
+#define   	CYBERGLOVE_PUBLISHER_H_
 
 #include <ros/ros.h>
 #include <vector>
@@ -43,61 +43,62 @@
 
 using namespace ros;
 
-namespace cyberglove{
+namespace cyberglove
+{
 
-  class CyberglovePublisher
+class CyberglovePublisher
+{
+public:
+  /// Constructor
+  CyberglovePublisher();
+
+  Publisher cyberglove_pub;
+  bool isPublishing();
+  void setPublishing(bool value);
+  void initialize_calibration(const std::string &path)
   {
-  public:
-    /// Constructor
-    CyberglovePublisher();
+    calibration_parser.init(path);
+  }
+private:
+  /////////////////
+  //  CALLBACKS  //
+  /////////////////
 
-    /// Destructor
-    ~CyberglovePublisher();
+  //ros node handle
+  NodeHandle node, n_tilde;
+  Rate sampling_rate;
+  unsigned int publish_counter_max, publish_counter_index;
 
-    Publisher cyberglove_pub;
-    void initialize_calibration(std::string path_to_calibration);
-    bool isPublishing();
-    void setPublishing(bool value);
-  private:
-    /////////////////
-    //  CALLBACKS  //
-    /////////////////
+  ///the actual connection with the cyberglove is done here.
+  boost::scoped_ptr<CybergloveSerial> serial_glove;
 
-    //ros node handle
-    NodeHandle node, n_tilde;
-    Rate sampling_rate;
-    unsigned int publish_counter_max, publish_counter_index;
+  /**
+   * The callback function: called each time a full message
+   * is received. This function is bound to the serial_glove
+   * object using boost::bind.
+   *
+   * @param glove_pos A vector containing the current raw joints positions.
+   * @param light_on true if the light is on, false otherwise.
+   */
+  void glove_callback(std::vector<float> glove_pos, bool light_on);
 
-    ///the actual connection with the cyberglove is done here.
-    boost::shared_ptr<CybergloveSerial> serial_glove;
+  std::string path_to_glove;
+  bool publishing;
 
-    /**
-     * The callback function: called each time a full message
-     * is received. This function is bound to the serial_glove
-     * object using boost::bind.
-     *
-     * @param glove_pos A vector containing the current raw joints positions.
-     * @param light_on true if the light is on, false otherwise.
-     */
-    void glove_callback(std::vector<float> glove_pos, bool light_on);
+  ///the calibration parser
+  xml_calibration_parser::XmlCalibrationParser calibration_parser;
 
-    std::string path_to_glove;
-    bool publishing;
+  Publisher cyberglove_raw_pub;
 
-    ///the calibration parser
-    xml_calibration_parser::XmlCalibrationParser calibration_parser;
+  sensor_msgs::JointState jointstate_msg;
+  sensor_msgs::JointState jointstate_raw_msg;
 
-    Publisher cyberglove_raw_pub;
+  void add_jointstate(float position, const std::string &joint_name);
 
-    sensor_msgs::JointState jointstate_msg;
-    sensor_msgs::JointState jointstate_raw_msg;
+  std::vector<float> calibration_values;
 
-    void add_jointstate(float position, std::string joint_name);
-
-    std::vector<float> calibration_values;
-
-    std::vector<std::vector<float> > glove_positions;
-  }; // end class CyberglovePublisher
+  std::vector<std::vector<float> > glove_positions;
+}; // end class CyberglovePublisher
 
 } // end namespace
 #endif 	    /* !CYBERGLOVE_PUBLISHER_H_ */
@@ -106,4 +107,4 @@ namespace cyberglove{
 Local Variables:
    c-basic-offset: 2
 End:
-*/
+ */

@@ -125,15 +125,18 @@ install(TARGETS cyberglove
 #############
 ## Testing ##
 #############
+if(COMMAND add_rostest_gtest)
+    add_rostest_gtest(test_cyberglove
+        test/test_calibration.test
+        test/test_calibration.cpp
+        src/xml_calibration_parser.cpp
+    )
+    add_dependencies(test_cyberglove ${catkin_EXPORTED_TARGETS})
+    target_link_libraries(test_cyberglove
+        tinyxml
+        ${catkin_LIBRARIES}
+        ${GTEST_LIBRARIES}
+        ${Boost_LIBRARIES}
+    )
+endif(COMMAND add_rostest_gtest)
 
-add_rostest_gtest(test_cyberglove
-  test/test_calibration.test
-  test/test_calibration.cpp
-  src/xml_calibration_parser.cpp
-)
-target_link_libraries(test_cyberglove
-  tinyxml
-  ${catkin_LIBRARIES}
-  ${GTEST_LIBRARIES}
-  ${Boost_LIBRARIES}
-)

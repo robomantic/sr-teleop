@@ -38,10 +38,10 @@ using namespace shadowhand_to_cybergrasp_remapper;
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "shadowhand_listener");
+  init(argc, argv, "shadowhand_listener");
 
   ShadowhandToCybergraspRemapper remapper;
-  ros::spin();
+  spin();
 
   return 0;
 }

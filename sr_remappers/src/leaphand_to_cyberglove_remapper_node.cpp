@@ -38,10 +38,10 @@ using namespace leaphand_to_cyberglove_remapper;
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "cyberglove_remapper");
+  init(argc, argv, "cyberglove_remapper");
 
   LeaphandToCybergloveRemapper remapper;
-  ros::spin();
+  spin();
 
   return 0;
 }

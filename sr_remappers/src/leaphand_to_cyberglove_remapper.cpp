@@ -36,7 +36,9 @@
 //own .h
 #include "sr_remappers/leaphand_to_cyberglove_remapper.h"
 #include <sr_robot_msgs/joint.h>
+
 using namespace ros;
+using namespace std;
 
 namespace leaphand_to_cyberglove_remapper
 {
@@ -49,18 +51,18 @@ LeaphandToCybergloveRemapper::LeaphandToCybergloveRemapper() :
   joints_names.resize(number_hand_joints);
   LeaphandToCybergloveRemapper::init_names();
 
-  std::string param;
-  std::string path;
+  string param;
+  string path;
   n_tilde.searchParam("leaphand_cyberglove_mapping_path", param);
-  n_tilde.param(param, path, std::string());
+  n_tilde.param(param, path, string());
   calibration_parser = new CalibrationParser(path);
   ROS_INFO("Mapping file loaded for the Cyberglove: %s", path.c_str());
 
-  std::string full_topic = "/cyberglove/calibrated/joint_states";
+  string full_topic = "/cyberglove/calibrated/joint_states";
   cyberglove_jointstates_sub = node.subscribe(full_topic, 10, &LeaphandToCybergloveRemapper::jointstatesCallback, this);
 
   // n_tilde.searchParam("sendupdate_prefix", searched_param);
-  // n_tilde.param(searched_param, prefix, std::string());
+  // n_tilde.param(searched_param, prefix, string());
   // full_topic = prefix + "sendupdate";
 
   leaphand_pub = node.advertise<sensor_msgs::JointState> ("/leap_hand_joint_states", 5);
@@ -85,15 +87,15 @@ void LeaphandToCybergloveRemapper::init_names()
   joints_names[14] = "LFJ3";
 }
 
-void LeaphandToCybergloveRemapper::jointstatesCallback( const sensor_msgs::JointStateConstPtr& msg )
+void LeaphandToCybergloveRemapper::jointstatesCallback(const sensor_msgs::JointStateConstPtr& msg)
 {
   sensor_msgs::JointState pub;
 
   //Do conversion
-  std::vector<double> vect = calibration_parser->get_remapped_vector(msg->position);
+  vector<double> vect = calibration_parser->get_remapped_vector(msg->position);
 
-  std::vector<sr_robot_msgs::joint> table(number_hand_joints);
-  for(unsigned int i = 0; i < number_hand_joints; ++i )
+  vector<sr_robot_msgs::joint> table(number_hand_joints);
+  for (unsigned int i = 0; i < number_hand_joints; ++i)
   {
     pub.name.push_back(joints_names[i]);
     pub.position.push_back(vect[i]);
