@@ -177,9 +177,6 @@ private:
 
   /// File descriptor
   int fd_;
-
-  /// Baud rate
-  int baud_;
 };
 }
 

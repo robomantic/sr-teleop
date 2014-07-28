@@ -87,7 +87,8 @@ CyberglovePublisher::CyberglovePublisher() :
                                 false, //No filtering: we're oversampling the data, we want a fast poling rate
                                 true)) //We want the glove to transmit the status (light on/off)
   {
-    ROS_FATAL("failed initialize cyberglove");
+    ROS_FATAL("failed to start and configure serial port");
+    return;
   }
 
   //start reading the data.

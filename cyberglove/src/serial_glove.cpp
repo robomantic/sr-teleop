@@ -24,13 +24,11 @@
 
 #include "cyberglove/serial_glove.hpp"
 
-#include <iostream>
-
+#include <ros/ros.h>
 #include <termios.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
-#include <stdio.h>
 
 using namespace std;
 using boost::function;
@@ -56,16 +54,15 @@ CybergloveSerial::CybergloveSerial(const char *serial_port, function<void(vector
   // time as us. Will need to switch to blocking for writes or errors
   // occur just after a re-plug event
 
-  fd_(open(serial_port, O_RDWR | O_NONBLOCK | O_NOCTTY)),
-  baud_(115200)
+  fd_(open(serial_port, O_RDWR | O_NONBLOCK | O_NOCTTY))
 {
   if (fd_ == -1)
   {
     printf("Failed to open port: %s\n%s (errno = %d)\n", serial_port, strerror(errno), errno);
     if (errno == EACCES)
-      puts("You probably don't have permission to open the port for reading and writing");
+      ROS_FATAL("You probably don't have permission to open the port for reading and writing");
     else if (errno == ENOENT)
-      puts("The requested port does not exist. Is the cyberglove connected ? Was the port name misspelled ?");
+      ROS_FATAL("The requested port does not exist. Is the cyberglove connected ? Was the port name misspelled ?");
     return;
   }
 
@@ -76,9 +73,9 @@ CybergloveSerial::CybergloveSerial(const char *serial_port, function<void(vector
 
   if (fcntl(fd_, F_SETLK, &fl) != 0)
   {
-    printf("Device %s is already locked. Try 'lsof | grep %s' to find other processes that own the port",
-           serial_port,
-           serial_port);
+    ROS_FATAL("Device %s is already locked. Try 'lsof | grep %s' to find other processes that own the port",
+              serial_port,
+              serial_port);
     close(fd_);
     return;
   }
@@ -87,16 +84,16 @@ CybergloveSerial::CybergloveSerial(const char *serial_port, function<void(vector
 
   if (tcgetattr(fd_, &newtio) != 0)
   {
-    puts("failed to get serial port attributes");
+    ROS_FATAL("failed to get serial port attributes");
     close(fd_);
     return;
   }
 
   newtio.c_cflag = CS8 | CLOCAL | CREAD;
   newtio.c_iflag = IGNPAR;
-  if (cfsetspeed(&newtio, baud_) != 0)
+  if (cfsetspeed(&newtio, B1152000) != 0)
   {
-    puts("failed to set serial baud rate");
+    ROS_FATAL("failed to set serial baud rate");
     close(fd_);
     return;
   }
@@ -104,26 +101,15 @@ CybergloveSerial::CybergloveSerial(const char *serial_port, function<void(vector
   // Activate new settings
   if (tcflush(fd_, TCIFLUSH) != 0)
   {
-    puts("failed to flush serial port");
+    ROS_FATAL("failed to flush serial port");
     close(fd_);
     return;
   }
 
   if (tcsetattr(fd_, TCSANOW, &newtio) != 0)
   {
-    printf("Unable to set serial port attributes. The port you specified (%s) may not be a serial port",
-           serial_port);
-    close(fd_);
-    return;
-  }
-
-  if (tcgetattr(fd_, &newtio) != 0 ||
-      newtio.c_cflag != (CS8 | CLOCAL | CREAD) ||
-      newtio.c_iflag != IGNPAR ||
-      newtio.c_ispeed != baud_ ||
-      newtio.c_ospeed != baud_)
-  {
-    puts("failed to set c_cflag");
+    ROS_FATAL("Unable to set serial port attributes. %s may be an invalid port",
+              serial_port);
     close(fd_);
     return;
   }
@@ -139,7 +125,7 @@ CybergloveSerial::~CybergloveSerial()
 
   //stop the cyberglove transmission
   if (write(fd_, "^c", 2) != 2)
-    puts("failed to stop cyberglove streaming");
+    ROS_FATAL("failed to stop cyberglove streaming");
   close(fd_);
 }
 
@@ -162,12 +148,9 @@ bool CybergloveSerial::set_params(int frequency, bool filtering, bool transmit_i
 
   if (ret < 9)
   {
-    puts("failed to set frequency");
+    ROS_FATAL("failed to set frequency");
     return false;
   }
-
-  if (tcflush(fd_, TCIOFLUSH) != 0)
-    puts("tcflush failed");
 
   //wait for the command to be applied
   sleep(1);
@@ -175,19 +158,17 @@ bool CybergloveSerial::set_params(int frequency, bool filtering, bool transmit_i
   if (filtering)
   {
     ret = write(fd_, "f 1\r", 4);
-    puts(" - Data filtered");
+    ROS_INFO(" - Data filtered");
   }
   else // Filtering off
   {
     ret = write(fd_, "f 0\r", 4);
-    puts(" - Data not filtered");
+    ROS_INFO(" - Data not filtered");
   }
 
-  if (tcflush(fd_, TCIOFLUSH) != 0)
-    puts("tcflush failed");
   if (ret != 4)
   {
-    puts("failed to set filtering");
+    ROS_FATAL("failed to set filtering");
     return false;
   }
 
@@ -197,19 +178,20 @@ bool CybergloveSerial::set_params(int frequency, bool filtering, bool transmit_i
   if (transmit_info)
   {
     ret = write(fd_, "u 1\r", 4);
-    puts(" - Additional info transmitted");
+    ROS_INFO(" - Additional info transmitted");
   }
   else // transmit info off
   {
     ret = write(fd_, "u 0\r", 4);
-    puts(" - Additional info not transmitted");
+    ROS_INFO(" - Additional info not transmitted");
   }
 
   if (tcflush(fd_, TCIOFLUSH) != 0)
-    puts("tcflush failed");
+    ROS_FATAL("tcflush failed");
+
   if (ret != 4)
   {
-    puts("failed to set the transmit info");
+    ROS_FATAL("failed to set the transmit info");
     return false;
   }
 
@@ -223,13 +205,13 @@ bool CybergloveSerial::set_params(int frequency, bool filtering, bool transmit_i
 
 void CybergloveSerial::start_stream()
 {
-  puts("starting stream");
+  ROS_INFO("starting stream");
 
   stream_paused_ = true;
 
   //start streaming by writing S to the serial port
   if (write(fd_, "S", 1) != 1)
-    puts("failed to start streaming");
+    ROS_FATAL("failed to start streaming");
 }
 
 void CybergloveSerial::stream_callback(char* world, int length)

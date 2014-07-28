@@ -15,17 +15,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-import roslib; roslib.load_manifest('cyberglove')
 
 import time
-import os
-import math
 import rospy
-import subprocess
 import threading
 import rosgraph.masterapi
-from sr_robot_msgs.msg import sendupdate, joint, joints_data
-from sensor_msgs.msg import *
+from sensor_msgs.msg import JointState
 
 class Joint():
     def __init__(self, name="", motor="", min=0, max=90):
@@ -69,8 +64,8 @@ class Cyberglove:
         self.hasglove = 0
         self.isFirstMessage = True
         self.liste = 0
-        self.raw = rospy.Subscriber('/cyberglove/raw/joint_states',JointState,self.callback_raw)
-        self.calibrated = rospy.Subscriber('/cyberglove/calibrated/joint_states',JointState,self.callback_calibrated)
+        self.raw = rospy.Subscriber('/cyberglove/raw/joint_states', JointState, self.callback_raw)
+        self.calibrated = rospy.Subscriber('/cyberglove/calibrated/joint_states', JointState, self.callback_calibrated)
         threading.Thread(None, rospy.spin)
         if self.has_glove():
             time.sleep(1.0)
