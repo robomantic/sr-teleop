@@ -65,31 +65,9 @@
 #ifndef _SERIAL_GLOVE_HPP_
 #define _SERIAL_GLOVE_HPP_
 
-#include <cereal_port/CerealPort.h>
 #include <boost/smart_ptr.hpp>
-
 #include <boost/function.hpp>
-
-namespace cyberglove_freq
-{
-
-/**
- * This structure contains the different strings which are written
- * to the serial port in order to get a given streaming frequency.
- */
-struct CybergloveFreq
-{
-  /**
-   *The fastest frequency is only used when testing the maximum transmission
-   * speed: it's not a stable frequency for the glove.
-   */
-  static const std::string fastest;
-  static const std::string hundred_hz;
-  static const std::string fourtyfive_hz;
-  static const std::string ten_hz;
-  static const std::string one_hz;
-};
-}
+#include <boost/thread/thread.hpp>
 
 namespace cyberglove
 {
@@ -108,66 +86,54 @@ public:
    * @param callback a pointer to a callback function, which will be called each time a
    *                 complete joint message is received.
    */
-  CybergloveSerial(const std::string &serial_port, boost::function<void(std::vector<float>, bool) > callback);
+  CybergloveSerial(const char *serial_port, boost::function<void(std::vector<float>, bool) > callback);
   ~CybergloveSerial();
 
   /**
+   * Set the transmit frequency for the cyberglove.
+
    * Turns on or off the filtering (done directly in the cyberglove). By default the filtering
    * is activated. We recommend turning it off if you want to do oversampling, to get the fastest
    * rate (the rate is divided by 2-3 if the filtering is on)
    *
-   * @param value true if you want to turn it on.
-   *
-   * @return 0 if success
-   */
-  int set_filtering(bool value);
-
-  /**
    * Turns on or off the status transmission: if it's on, then a char is added to the message
    * to describe the current status of the glove. For this status byte, the bit 1 corresponds
    * to the button status, and the bit 2 corresponds to the light status.
    *
-   * @param value true if you want to turn it on.
+   * @param frequency (100,45,10,1) default 100
+   * @param value true if you want filtering on.
+   * @param value true if you want transmit_info on.
    *
-   * @return 0 if success
+   * @return true on success
+   *
    */
-  int set_transmit_info(bool value);
-
-  /**
-   * Set the transmit frequency for the cyberglove.
-   *
-   * @param frequency use the elements of the struct cyberglove_freq::CybergloveFreq
-   *
-   * @return 0 if success
-   */
-  int set_frequency(std::string frequency);
+  bool set_params(int frequency, bool filtering, bool transmit_info);
 
   /**
    * Start streaming the data from the cyberglove, calling the
    * callback function each time the full message is received.
    *
-   * @return 0 if success
    */
-  int start_stream();
+  void start_stream();
 
   /**
    * We keep the count of all the messages received for the glove.
    *
    * @return the number of received messages.
    */
-  int get_nb_msgs_received();
+  int get_nb_msgs_received()
+  {
+    return nb_msgs_received_;
+  }
 
   /**
    * The number of sensors in the glove.
    */
-  static const unsigned short glove_size;
+  static const size_t glove_size_ = 22;
+
+  bool init_success_;
 
 private:
-  /**
-   * CerealPort is the ROS library used to talk
-   * to the serial port.
-   */
-  cereal::CerealPort cereal_port;
 
   /**
    * The callback function for the raw data coming from the
@@ -181,22 +147,39 @@ private:
    */
   void stream_callback(char* world, int length);
 
-  int nb_msgs_received, glove_pos_index;
-  /// A vector containing the current joints positions.
-  std::vector<float> glove_positions;
+  /// function for the stream_thread_
+  void read_thread();
 
-  int current_value;
+  int nb_msgs_received_;
+  int glove_pos_index_;
+  int current_value_;
+
+  /// A vector containing the current joints positions.
+  std::vector<float> glove_positions_;
 
   /**
    * The pointer to the function called each time a full message is received.
    * This function is linked when instantiating the class.
    */
-  boost::function<void(std::vector<float>, bool) > callback_function;
+  boost::function<void(std::vector<float>, bool) > callback_function_;
 
-  bool light_on, button_on;
+  /// Stream thread
+  boost::thread stream_thread_;
+
+  bool stream_paused_;
+  bool stop_stream_;
+
+  bool light_on_;
+  bool button_on_;
 
   ///Did we get any garbage in the received message?
-  bool no_errors;
+  bool no_errors_;
+
+  /// File descriptor
+  int fd_;
+
+  /// Baud rate
+  int baud_;
 };
 }
 

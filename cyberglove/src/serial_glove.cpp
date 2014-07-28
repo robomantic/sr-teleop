@@ -25,103 +25,211 @@
 #include "cyberglove/serial_glove.hpp"
 
 #include <iostream>
-using namespace std;
 
-namespace cyberglove_freq
-{
-const string CybergloveFreq::fastest = "t 1152 0\r"; //fastest speed, just for testing
-const string CybergloveFreq::hundred_hz = "t 1152 1\r"; //100Hz
-const string CybergloveFreq::fourtyfive_hz = "t 2560 1\r"; //45Hz
-const string CybergloveFreq::ten_hz = "t 11520 1\r"; //10Hz
-const string CybergloveFreq::one_hz = "t 57600 2\r"; //1Hz
-}
+#include <termios.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <stdio.h>
+
+using namespace std;
+using boost::function;
 
 namespace cyberglove
 {
-const unsigned short CybergloveSerial::glove_size = 22;
 
-CybergloveSerial::CybergloveSerial(const string &serial_port, boost::function<void(vector<float>, bool) > callback) :
-  cereal_port(),
-  nb_msgs_received(0),
-  glove_pos_index(0),
-  current_value(0),
-  glove_positions(glove_size, 0.0),
-  callback_function(callback),
-  light_on(true),
-  button_on(true),
-  no_errors(true)
+CybergloveSerial::CybergloveSerial(const char *serial_port, function<void(vector<float>, bool) > callback) :
+  init_success_(false),
+  nb_msgs_received_(0),
+  glove_pos_index_(0),
+  current_value_(0),
+  glove_positions_(glove_size_, 0.0),
+  callback_function_(callback),
+  stream_thread_(&cyberglove::CybergloveSerial::read_thread, this),
+  stream_paused_(true),
+  stop_stream_(false),
+  light_on_(true),
+  button_on_(true),
+  no_errors_(true),
+  // Make IO non blocking. This way there are no race conditions that
+  // cause blocking when a badly behaving process does a read at the same
+  // time as us. Will need to switch to blocking for writes or errors
+  // occur just after a re-plug event
+
+  fd_(open(serial_port, O_RDWR | O_NONBLOCK | O_NOCTTY)),
+  baud_(115200)
 {
-  cereal_port.open(serial_port.c_str());
+  if (fd_ == -1)
+  {
+    printf("Failed to open port: %s\n%s (errno = %d)\n", serial_port, strerror(errno), errno);
+    if (errno == EACCES)
+      puts("You probably don't have permission to open the port for reading and writing");
+    else if (errno == ENOENT)
+      puts("The requested port does not exist. Is the cyberglove connected ? Was the port name misspelled ?");
+    return;
+  }
+
+  struct flock fl = {};
+  fl.l_type = F_WRLCK;
+  fl.l_whence = SEEK_SET;
+  fl.l_pid = getpid();
+
+  if (fcntl(fd_, F_SETLK, &fl) != 0)
+  {
+    printf("Device %s is already locked. Try 'lsof | grep %s' to find other processes that own the port",
+           serial_port,
+           serial_port);
+    close(fd_);
+    return;
+  }
+
+  struct termios newtio = {};
+
+  if (tcgetattr(fd_, &newtio) != 0)
+  {
+    puts("failed to get serial port attributes");
+    close(fd_);
+    return;
+  }
+
+  newtio.c_cflag = CS8 | CLOCAL | CREAD;
+  newtio.c_iflag = IGNPAR;
+  if (cfsetspeed(&newtio, baud_) != 0)
+  {
+    puts("failed to set serial baud rate");
+    close(fd_);
+    return;
+  }
+
+  // Activate new settings
+  if (tcflush(fd_, TCIFLUSH) != 0)
+  {
+    puts("failed to flush serial port");
+    close(fd_);
+    return;
+  }
+
+  if (tcsetattr(fd_, TCSANOW, &newtio) != 0)
+  {
+    printf("Unable to set serial port attributes. The port you specified (%s) may not be a serial port",
+           serial_port);
+    close(fd_);
+    return;
+  }
+
+  if (tcgetattr(fd_, &newtio) != 0 ||
+      newtio.c_cflag != (CS8 | CLOCAL | CREAD) ||
+      newtio.c_iflag != IGNPAR ||
+      newtio.c_ispeed != baud_ ||
+      newtio.c_ospeed != baud_)
+  {
+    puts("failed to set c_cflag");
+    close(fd_);
+    return;
+  }
+
+  usleep(200000);
+  init_success_ = true;
 }
 
 CybergloveSerial::~CybergloveSerial()
 {
-  cereal_port.stopStream();
+  stop_stream_ = true;
+  stream_thread_.join();
+
   //stop the cyberglove transmission
-  cereal_port.write("^c", 2);
+  if (write(fd_, "^c", 2) != 2)
+    puts("failed to stop cyberglove streaming");
+  close(fd_);
 }
 
-int CybergloveSerial::set_filtering(bool value)
+bool CybergloveSerial::set_params(int frequency, bool filtering, bool transmit_info)
 {
-  if (value) //Filtering will be on
+  // IO is currently non-blocking. This is what we want for the more common read case.
+  int origflags = fcntl(fd_, F_GETFL, 0);
+  fcntl(fd_, F_SETFL, origflags & ~O_NONBLOCK);
+
+  int ret = 0;
+
+  if (frequency == 45)
+    ret = write(fd_, "t 2560 1\r", 9);
+  else if (frequency == 10)
+    ret = write(fd_, "t 11520 1\r", 10);
+  else if (frequency == 1)
+    ret = write(fd_, "t 57600 2\r", 10);
+  else // 100
+    ret = write(fd_, "t 1152 1\r", 9);
+
+  if (ret < 9)
   {
-    cereal_port.write("f 1\r", 4);
-    cout << " - Data filtered" << '\n';
+    puts("failed to set frequency");
+    return false;
+  }
+
+  if (tcflush(fd_, TCIOFLUSH) != 0)
+    puts("tcflush failed");
+
+  //wait for the command to be applied
+  sleep(1);
+
+  if (filtering)
+  {
+    ret = write(fd_, "f 1\r", 4);
+    puts(" - Data filtered");
   }
   else // Filtering off
   {
-    cereal_port.write("f 0\r", 4);
-    cout << " - Data not filtered" << '\n';
+    ret = write(fd_, "f 0\r", 4);
+    puts(" - Data not filtered");
   }
-  cereal_port.flush();
+
+  if (tcflush(fd_, TCIOFLUSH) != 0)
+    puts("tcflush failed");
+  if (ret != 4)
+  {
+    puts("failed to set filtering");
+    return false;
+  }
 
   //wait for the command to be applied
   sleep(1);
 
-  return 0;
-}
-
-int CybergloveSerial::set_transmit_info(bool value)
-{
-  if (value) //transmit info will be on
+  if (transmit_info)
   {
-    cereal_port.write("u 1\r", 4);
-    cout << " - Additional info transmitted" << '\n';
+    ret = write(fd_, "u 1\r", 4);
+    puts(" - Additional info transmitted");
   }
   else // transmit info off
   {
-    cereal_port.write("u 0\r", 4);
-    cout << " - Additional info not transmitted" << '\n';
+    ret = write(fd_, "u 0\r", 4);
+    puts(" - Additional info not transmitted");
   }
-  cereal_port.flush();
+
+  if (tcflush(fd_, TCIOFLUSH) != 0)
+    puts("tcflush failed");
+  if (ret != 4)
+  {
+    puts("failed to set the transmit info");
+    return false;
+  }
 
   //wait for the command to be applied
   sleep(1);
 
-  return 0;
+  fcntl(fd_, F_SETFL, origflags | O_NONBLOCK);
+
+  return true;
 }
 
-int CybergloveSerial::set_frequency(string frequency)
+void CybergloveSerial::start_stream()
 {
-  cereal_port.write(frequency.c_str(), frequency.size());
-  cereal_port.flush();
+  puts("starting stream");
 
-  //wait for the command to be applied
-  sleep(1);
-  return 0;
-}
-
-int CybergloveSerial::start_stream()
-{
-  cout << "starting stream" << '\n';
-
-  cereal_port.startReadStream(boost::bind(&CybergloveSerial::stream_callback, this, _1, _2));
+  stream_paused_ = true;
 
   //start streaming by writing S to the serial port
-  cereal_port.write("S", 1);
-  cereal_port.flush();
-
-  return 0;
+  if (write(fd_, "S", 1) != 1)
+    puts("failed to start streaming");
 }
 
 void CybergloveSerial::stream_callback(char* world, int length)
@@ -129,66 +237,78 @@ void CybergloveSerial::stream_callback(char* world, int length)
   //read each received char.
   for (int i = 0; i < length; ++i)
   {
-    current_value = (int) (unsigned char) world[i];
-    switch (current_value)
+    current_value_ = (unsigned char) world[i];
+    if (current_value_ == 'S')
     {
-      case 'S':
-        //the line starts with S, followed by the sensors values
-        ++nb_msgs_received;
-        //reset the index to 0
-        glove_pos_index = 0;
-        //reset no_errors to true for the new message
-        no_errors = true;
-        break;
+      //the line starts with S, followed by the sensors values
+      ++nb_msgs_received_;
+      //reset the index to 0
+      glove_pos_index_ = 0;
+      //reset no_errors to true for the new message
+      no_errors_ = true;
+      break;
+    }
+    else
+    {
+      //this is a glove sensor value, a status byte or a "message end"
+      switch (glove_pos_index_)
+      {
+        case glove_size_:
+          //the last char of the msg is the status byte
 
-      default:
-        //this is a glove sensor value, a status byte or a "message end"
-        switch (glove_pos_index)
-        {
-          case glove_size:
-            //the last char of the msg is the status byte
+          //the status bit 1 corresponds to the button
+          if (current_value_ & 2)
+            button_on_ = true;
+          else
+            button_on_ = false;
+          //the status bit 2 corresponds to the light
+          if (current_value_ & 4)
+            light_on_ = true;
+          else
+            light_on_ = false;
 
-            //the status bit 1 corresponds to the button
-            if (current_value & 2)
-              button_on = true;
-            else
-              button_on = false;
-            //the status bit 2 corresponds to the light
-            if (current_value & 4)
-              light_on = true;
-            else
-              light_on = false;
+          break;
 
-            break;
+        case glove_size_ + 1:
+          //the last char of the line should be 0
+          //if it is 0, then the full message has been received,
+          //and we call the callback function.
+          if (current_value_ == 0 && no_errors_)
+            callback_function_(glove_positions_, light_on_);
+          break;
 
-          case glove_size + 1:
-            //the last char of the line should be 0
-            //if it is 0, then the full message has been received,
-            //and we call the callback function.
-            if (current_value == 0 && no_errors)
-              callback_function(glove_positions, light_on);
-            break;
-
-          default:
-            //this is a joint data from the glove
-            //the value in the message should never be 0.
-            if (current_value == 0)
-              no_errors = false;
-            // the values sent by the glove are in the range [1;254]
-            //   -> we convert them to float in the range [0;1]
-            glove_positions[glove_pos_index] = (((float) current_value) - 1.0f) / 254.0f;
-            break;
-        }
-
-        ++glove_pos_index;
-        break;
+        default:
+          //this is a joint data from the glove
+          //the value in the message should never be 0.
+          if (current_value_ == 0)
+            no_errors_ = false;
+          // the values sent by the glove are in the range [1;254]
+          //   -> we convert them to float in the range [0;1]
+          glove_positions_[glove_pos_index_] = (((float) current_value_) - 1.0) / 254.0;
+          break;
+      }
+      ++glove_pos_index_;
     }
   }
 }
 
-int CybergloveSerial::get_nb_msgs_received()
+void CybergloveSerial::read_thread()
 {
-  return nb_msgs_received;
+  char data[128];
+
+  struct pollfd ufd;
+  ufd.fd = fd_;
+  ufd.events = POLLIN;
+
+  while (!stop_stream_)
+  {
+    if (!stream_paused_ && poll(&ufd, 1, 10) > 0 && ufd.revents != POLLERR)
+    {
+      int ret = read(fd_, data, 128);
+      if (ret > 0)
+        stream_callback(data, ret);
+    }
+  }
 }
 }
 

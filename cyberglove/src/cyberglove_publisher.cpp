@@ -80,35 +80,18 @@ CyberglovePublisher::CyberglovePublisher() :
   ROS_INFO_STREAM("Opening glove on port: " << path_to_glove);
 
   //initialize the connection with the cyberglove and binds the callback function
-  serial_glove.reset(new CybergloveSerial(path_to_glove, boost::bind(&CyberglovePublisher::glove_callback, this, _1, _2)));
+  serial_glove.reset(new CybergloveSerial(path_to_glove.c_str(), boost::bind(&CyberglovePublisher::glove_callback, this, _1, _2)));
 
-  int res = -1;
-  cyberglove_freq::CybergloveFreq frequency;
-
-  switch ((int) sampling_freq)
+  if (!serial_glove->init_success_ ||
+      !serial_glove->set_params(sampling_freq,
+                                false, //No filtering: we're oversampling the data, we want a fast poling rate
+                                true)) //We want the glove to transmit the status (light on/off)
   {
-    case 100:
-      res = serial_glove->set_frequency(frequency.hundred_hz);
-      break;
-    case 45:
-      res = serial_glove->set_frequency(frequency.fourtyfive_hz);
-      break;
-    case 10:
-      res = serial_glove->set_frequency(frequency.ten_hz);
-      break;
-    case 1:
-      res = serial_glove->set_frequency(frequency.one_hz);
-      break;
-    default:
-      res = serial_glove->set_frequency(frequency.hundred_hz);
-      break;
+    ROS_FATAL("failed initialize cyberglove");
   }
-  //No filtering: we're oversampling the data, we want a fast poling rate
-  res = serial_glove->set_filtering(false);
-  //We want the glove to transmit the status (light on/off)
-  res = serial_glove->set_transmit_info(true);
+
   //start reading the data.
-  res = serial_glove->start_stream();
+  serial_glove->start_stream();
 
   //publishes calibrated JointState messages
   string prefix;
@@ -191,11 +174,11 @@ void CyberglovePublisher::glove_callback(vector<float> glove_pos, bool light_on)
     jointstate_raw_msg.velocity.clear();
 
     //fill the joint_state msg with the averaged glove data
-    for (unsigned int index_joint = 0; index_joint < CybergloveSerial::glove_size; ++index_joint)
+    for (size_t index_joint = 0; index_joint < CybergloveSerial::glove_size_; ++index_joint)
     {
       //compute the average over the samples for the current joint
       float averaged_value = 0.0f;
-      for (unsigned int index_sample = 0; index_sample < publish_counter_max; ++index_sample)
+      for (size_t index_sample = 0; index_sample < publish_counter_max; ++index_sample)
       {
         averaged_value += glove_positions[index_sample][index_joint];
       }

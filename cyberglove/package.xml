@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>cyberglove</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>This is a generic ROS interface to the Cyberglove from Immersion. It reads data from the Cyberglove, calibrate them and streams them to two different /joint_states topic: calibrated and raw data.</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
@@ -19,7 +19,6 @@
   <build_depend>diagnostic_msgs</build_depend>
   <build_depend>genmsg</build_depend>
   <build_depend>sr_cyberglove_config</build_depend>
-  <build_depend>cereal_port</build_depend>
 
   <run_depend>roslib</run_depend>
   <run_depend>roscpp</run_depend>
@@ -29,6 +28,5 @@
   <run_depend>diagnostic_msgs</run_depend>
   <run_depend>genmsg</run_depend>
   <run_depend>sr_cyberglove_config</run_depend>
-  <run_depend>cereal_port</run_depend>
 
 </package>
