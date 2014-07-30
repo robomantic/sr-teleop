@@ -179,7 +179,7 @@ int XmlCalibrationParser::build_calibration_table()
   for (unsigned int index_calib = 0; index_calib < jointsCalibrations.size(); ++index_calib)
   {
     string name = jointsCalibrations[index_calib].name;
-    cout << name << '\n';
+    ROS_DEBUG_STREAM(name);
 
     vector<Calibration> calib = jointsCalibrations[index_calib].calibrations;
 
@@ -191,7 +191,7 @@ int XmlCalibrationParser::build_calibration_table()
     //order the calibration vector by ascending values of raw_value
     //      ROS_ERROR("TODO: calibration vector not ordered yet");
 
-    cout << "lookup table : ";
+    ROS_DEBUG("lookup table : ");
 
     //setup the lookup table
     for (unsigned int index_lookup = 0;
@@ -199,11 +199,9 @@ int XmlCalibrationParser::build_calibration_table()
          ++index_lookup)
     {
       float value = compute_lookup_value(index_lookup, calib);
-      cout << index_lookup << ":" << value << " ";
+      ROS_DEBUG_STREAM(" " << index_lookup << ":" << value << " ");
       lookup_table[index_lookup] = value;
     }
-
-    cout << '\n';
 
     //add the values to the map
     joints_calibrations_map[name] = lookup_table;
@@ -268,7 +266,7 @@ float XmlCalibrationParser::get_calibration_value(float position, const string &
   {
     //reads from the lookup table
     int index = return_index_from_raw_position(position);
-    cout << index << '\n';
+    ROS_DEBUG_STREAM(" " << index);
     return iter->second[index];
   }
   else

@@ -58,7 +58,7 @@ CybergloveSerial::CybergloveSerial(const char *serial_port, function<void(vector
 {
   if (fd_ == -1)
   {
-    printf("Failed to open port: %s\n%s (errno = %d)\n", serial_port, strerror(errno), errno);
+    ROS_FATAL("Failed to open port: %s\n%s (errno = %d)\n", serial_port, strerror(errno), errno);
     if (errno == EACCES)
       ROS_FATAL("You probably don't have permission to open the port for reading and writing");
     else if (errno == ENOENT)
@@ -205,13 +205,13 @@ bool CybergloveSerial::set_params(int frequency, bool filtering, bool transmit_i
 
 void CybergloveSerial::start_stream()
 {
-  ROS_INFO("starting stream");
+  ROS_INFO("Starting cyberglove serial port stream");
 
-  stream_paused_ = true;
+  stream_paused_ = false;
 
   //start streaming by writing S to the serial port
   if (write(fd_, "S", 1) != 1)
-    ROS_FATAL("failed to start streaming");
+    ROS_FATAL("Failed to start cyberglove serial port stream");
 }
 
 void CybergloveSerial::stream_callback(char* world, int length)
@@ -284,11 +284,19 @@ void CybergloveSerial::read_thread()
 
   while (!stop_stream_)
   {
-    if (!stream_paused_ && poll(&ufd, 1, 10) > 0 && ufd.revents != POLLERR)
+    if (!stream_paused_)
     {
-      int ret = read(fd_, data, 128);
-      if (ret > 0)
-        stream_callback(data, ret);
+      int poll_ret = poll(&ufd, 1, 10);
+
+      ROS_INFO_STREAM_THROTTLE(1, "poll_ret " << poll_ret << " ufd.revents " << ufd.revents);
+
+      if (poll_ret > 0 && ufd.revents != POLLERR)
+      {
+        int ret = read(fd_, data, 128);
+        ROS_INFO_STREAM_THROTTLE(1, "read_ret " << ret);
+        if (ret > 0)
+          stream_callback(data, ret);
+      }
     }
   }
 }

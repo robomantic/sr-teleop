@@ -151,11 +151,12 @@ void CyberglovePublisher::setPublishing(bool value)
 
 void CyberglovePublisher::glove_callback(vector<float> glove_pos, bool light_on)
 {
+  ROS_INFO_THROTTLE(1, "glove_callback");
   //if the light is off, we don't publish any data.
   if (!light_on)
   {
     publishing = false;
-    ROS_DEBUG("The glove button is off, no data will be read / sent");
+    ROS_INFO("The glove button is off, no data will be read / sent");
     spinOnce();
     sampling_rate.sleep();
     return;
