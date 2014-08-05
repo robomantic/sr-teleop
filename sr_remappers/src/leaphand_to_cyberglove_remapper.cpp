@@ -46,9 +46,9 @@ namespace leaphand_to_cyberglove_remapper
 const unsigned int LeaphandToCybergloveRemapper::number_hand_joints = 15;
 
 LeaphandToCybergloveRemapper::LeaphandToCybergloveRemapper() :
-  n_tilde("~")
+  n_tilde("~"),
+  joints_names(number_hand_joints)
 {
-  joints_names.resize(number_hand_joints);
   LeaphandToCybergloveRemapper::init_names();
 
   string param;
