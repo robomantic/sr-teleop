@@ -46,11 +46,7 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_executable(cyberglove
-  src/cyberglove_publisher.cpp
-  src/cyberglove_node.cpp
   src/serial_glove.cpp
-  src/xml_calibration_parser.cpp
-  src/cyberglove_service.cpp
 )
 
 add_dependencies(cyberglove
@@ -81,4 +77,3 @@ if(COMMAND add_rostest_gtest)
         ${Boost_LIBRARIES}
     )
 endif(COMMAND add_rostest_gtest)
-

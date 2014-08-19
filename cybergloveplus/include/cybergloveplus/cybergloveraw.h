@@ -65,7 +65,7 @@ namespace CyberGlovePlus
 		struct termios termios_save;
 		int serial_port_fd;
 		char glove_message[100];
-		Publisher raw_pub;
+		Publisher raw_pub;	
 
 		int init_glove();
 		int open_serial(std::string port);

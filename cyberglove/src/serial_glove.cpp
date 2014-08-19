@@ -1,309 +1,339 @@
-/**
- * @file   serial_glove.hpp
- * @author Ugo Cupcic <ugo@shadowrobot.com>
- * @date   Thu May  5 15:30:17 2011
- *
- * Copyright 2011 Shadow Robot Company Ltd.
- *
- * This program is free software: you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation, either version 2 of the License, or (at your option)
- * any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * @brief Communicate via the serial port with the Cyberglove.
- *
- */
+
+#include <ros/ros.h>
+
+#include <string>
+#include <sstream>
 
 #include "cyberglove/serial_glove.hpp"
 
-#include <ros/ros.h>
-#include <termios.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <poll.h>
+using namespace ros;
 
-using namespace std;
-using boost::function;
-
-namespace cyberglove
+namespace CyberGlovePlus
 {
 
-CybergloveSerial::CybergloveSerial(const char *serial_port, function<void(vector<float>, bool) > callback) :
-  init_success_(false),
-  nb_msgs_received_(0),
-  glove_pos_index_(0),
-  current_value_(0),
-  glove_positions_(glove_size_, 0.0),
-  callback_function_(callback),
-  stream_thread_(&cyberglove::CybergloveSerial::read_thread, this),
-  stream_paused_(true),
-  stop_stream_(false),
-  light_on_(true),
-  button_on_(true),
-  no_errors_(true),
-  // Make IO non blocking. This way there are no race conditions that
-  // cause blocking when a badly behaving process does a read at the same
-  // time as us. Will need to switch to blocking for writes or errors
-  // occur just after a re-plug event
-
-  fd_(open(serial_port, O_RDWR | O_NONBLOCK | O_NOCTTY))
-{
-  if (fd_ == -1)
+  CyberGloveRaw::CyberGloveRaw():n_tilde("~")
   {
-    ROS_FATAL("Failed to open port: %s\n%s (errno = %d)\n", serial_port, strerror(errno), errno);
-    if (errno == EACCES)
-      ROS_FATAL("You probably don't have permission to open the port for reading and writing");
-    else if (errno == ENOENT)
-      ROS_FATAL("The requested port does not exist. Is the cyberglove connected ? Was the port name misspelled ?");
-    return;
+    gl_serial_port = DEFAULT_SERIAL_PORT;
+    gl_frequency = DEFAULT_FREQUENCY;
   }
 
-  struct flock fl = {};
-  fl.l_type = F_WRLCK;
-  fl.l_whence = SEEK_SET;
-  fl.l_pid = getpid();
-
-  if (fcntl(fd_, F_SETLK, &fl) != 0)
+  CyberGloveRaw::~CyberGloveRaw()
   {
-    ROS_FATAL("Device %s is already locked. Try 'lsof | grep %s' to find other processes that own the port",
-              serial_port,
-              serial_port);
-    close(fd_);
-    return;
   }
 
-  struct termios newtio = {};
-
-  if (tcgetattr(fd_, &newtio) != 0)
+  int CyberGloveRaw::init()
   {
-    ROS_FATAL("failed to get serial port attributes");
-    close(fd_);
-    return;
-  }
+    ROS_INFO("starting init");
 
-  newtio.c_cflag = CS8 | CLOCAL | CREAD;
-  newtio.c_iflag = IGNPAR;
-  if (cfsetspeed(&newtio, B1152000) != 0)
-  {
-    ROS_FATAL("failed to set serial baud rate");
-    close(fd_);
-    return;
-  }
-
-  // Activate new settings
-  if (tcflush(fd_, TCIFLUSH) != 0)
-  {
-    ROS_FATAL("failed to flush serial port");
-    close(fd_);
-    return;
-  }
-
-  if (tcsetattr(fd_, TCSANOW, &newtio) != 0)
-  {
-    ROS_FATAL("Unable to set serial port attributes. %s may be an invalid port",
-              serial_port);
-    close(fd_);
-    return;
-  }
-
-  usleep(200000);
-  init_success_ = true;
-}
-
-CybergloveSerial::~CybergloveSerial()
-{
-  stop_stream_ = true;
-  stream_thread_.join();
-
-  //stop the cyberglove transmission
-  if (write(fd_, "^c", 2) != 2)
-    ROS_FATAL("failed to stop cyberglove streaming");
-  close(fd_);
-}
-
-bool CybergloveSerial::set_params(int frequency, bool filtering, bool transmit_info)
-{
-  // IO is currently non-blocking. This is what we want for the more common read case.
-  int origflags = fcntl(fd_, F_GETFL, 0);
-  fcntl(fd_, F_SETFL, origflags & ~O_NONBLOCK);
-
-  int ret = 0;
-
-  if (frequency == 45)
-    ret = write(fd_, "t 2560 1\r", 9);
-  else if (frequency == 10)
-    ret = write(fd_, "t 11520 1\r", 10);
-  else if (frequency == 1)
-    ret = write(fd_, "t 57600 2\r", 10);
-  else // 100
-    ret = write(fd_, "t 1152 1\r", 9);
-
-  if (ret < 9)
-  {
-    ROS_FATAL("failed to set frequency");
-    return false;
-  }
-
-  //wait for the command to be applied
-  sleep(1);
-
-  if (filtering)
-  {
-    ret = write(fd_, "f 1\r", 4);
-    ROS_INFO(" - Data filtered");
-  }
-  else // Filtering off
-  {
-    ret = write(fd_, "f 0\r", 4);
-    ROS_INFO(" - Data not filtered");
-  }
-
-  if (ret != 4)
-  {
-    ROS_FATAL("failed to set filtering");
-    return false;
-  }
-
-  //wait for the command to be applied
-  sleep(1);
-
-  if (transmit_info)
-  {
-    ret = write(fd_, "u 1\r", 4);
-    ROS_INFO(" - Additional info transmitted");
-  }
-  else // transmit info off
-  {
-    ret = write(fd_, "u 0\r", 4);
-    ROS_INFO(" - Additional info not transmitted");
-  }
-
-  if (tcflush(fd_, TCIOFLUSH) != 0)
-    ROS_FATAL("tcflush failed");
-
-  if (ret != 4)
-  {
-    ROS_FATAL("failed to set the transmit info");
-    return false;
-  }
-
-  //wait for the command to be applied
-  sleep(1);
-
-  fcntl(fd_, F_SETFL, origflags | O_NONBLOCK);
-
-  return true;
-}
-
-void CybergloveSerial::start_stream()
-{
-  ROS_INFO("Starting cyberglove serial port stream");
-
-  stream_paused_ = false;
-
-  //start streaming by writing S to the serial port
-  if (write(fd_, "S", 1) != 1)
-    ROS_FATAL("Failed to start cyberglove serial port stream");
-}
-
-void CybergloveSerial::stream_callback(char* world, int length)
-{
-  //read each received char.
-  for (int i = 0; i < length; ++i)
-  {
-    current_value_ = (unsigned char) world[i];
-    if (current_value_ == 'S')
+    if (n_tilde.hasParam("serialport"))
     {
-      //the line starts with S, followed by the sensors values
-      ++nb_msgs_received_;
-      //reset the index to 0
-      glove_pos_index_ = 0;
-      //reset no_errors to true for the new message
-      no_errors_ = true;
+      n_tilde.getParam("serialport", gl_serial_port);
+    }
+    else if (n_tilde.hasParam("/serialport"))
+    {
+      n_tilde.getParam("/serialport", gl_serial_port);
+    }
+    ROS_INFO("Serial port is %s", gl_serial_port.c_str());
+
+    if (n_tilde.hasParam("frequency"))
+    {
+      n_tilde.getParam("frequency", gl_frequency);
+    }
+    else if (n_tilde.hasParam("/frequency"))
+    {
+      n_tilde.getParam("/frequency", gl_frequency);
+    }
+    ROS_INFO("Frequency is %d", gl_frequency);
+
+    return init_glove();
+  }
+
+  void CyberGloveRaw::run()
+  {
+    print_params();
+
+    ros::Rate loop_rate(gl_frequency);
+
+    while (ros::ok())
+    {
+      read_button_value();
+      read_sensor_values();
+      action();
+      ros::spinOnce();
+      loop_rate.sleep();
+    }
+  }
+
+  void CyberGloveRaw::action()
+  {
+    jointstate_raw_msg.position.clear();
+    jointstate_raw_msg.velocity.clear();
+    for(int i = 0; i < GLOVE_SIZE; i++)
+    {
+      jointstate_raw_msg.position.push_back(gl_values[gl_sensors[i]]);
+    }
+    raw_pub.publish(jointstate_raw_msg);
+  }
+
+  void CyberGloveRaw::print_params()
+  {
+    ROS_INFO("Serial port is %s", gl_serial_port.c_str());
+    ROS_INFO("Frequency is %d", gl_frequency);
+  }
+
+  int CyberGloveRaw::init_glove()
+  {
+    serial_port_fd = -1;
+
+    gl_sensors.push_back("G_ThumbRotate");		//  0
+    gl_sensors.push_back("G_ThumbMPJ");			//  1
+    gl_sensors.push_back("G_ThumbIJ");			//  2
+    gl_sensors.push_back("G_ThumbAb");			//  3
+    gl_sensors.push_back("G_IndexMPJ");			//  4
+    gl_sensors.push_back("G_IndexPIJ");			//  5
+    gl_sensors.push_back("G_IndexDIJ");			//  6
+    gl_sensors.push_back("G_MiddleMPJ");		//  7
+    gl_sensors.push_back("G_MiddlePIJ");		//  8
+    gl_sensors.push_back("G_MiddleDIJ");		//  9
+    gl_sensors.push_back("G_MiddleIndexAb");	// 10
+    gl_sensors.push_back("G_RingMPJ");			// 11
+    gl_sensors.push_back("G_RingPIJ");			// 12
+    gl_sensors.push_back("G_RingDIJ");			// 13
+    gl_sensors.push_back("G_RingMiddleAb");		// 14
+    gl_sensors.push_back("G_PinkieMPJ");		// 15
+    gl_sensors.push_back("G_PinkiePIJ");		// 16
+    gl_sensors.push_back("G_PinkieDIJ");		// 17
+    gl_sensors.push_back("G_PinkieRingAb");		// 18
+    gl_sensors.push_back("G_PalmArch");			// 19
+    gl_sensors.push_back("G_WristPitch");		// 20
+    gl_sensors.push_back("G_WristYaw");			// 21
+
+    for (int i = 0; i < GLOVE_SIZE; i++)
+    {
+      jointstate_raw_msg.name.push_back(gl_sensors[i]);
+      gl_values[gl_sensors[i]] = 0;
+    }
+
+    std::string prefix, full_topic, calibrated_full_topic;
+
+    prefix = "/cybergloveplus";
+
+    full_topic = prefix + "/raw/joint_states";
+    raw_pub = n_tilde.advertise<sensor_msgs::JointState>(full_topic, 2);
+
+    return open_serial(gl_serial_port);
+  }
+
+  int CyberGloveRaw::open_serial(std::string port)
+  {
+    struct termios termios_p;
+
+    ROS_INFO("Opening %s\n",  port.c_str());
+    serial_port_fd = open(port.c_str(), O_RDWR | O_NOCTTY); //will return a file descriptor based on an actual file
+
+    if (serial_port_fd < 0)
+    {
+      ROS_ERROR("Cannot open serial port! maybe run as root...");
+      return 1;
+    }
+
+    ROS_INFO("Serial port opened succesfuly");
+
+    //! get attributes associated with the serial port
+    tcgetattr(serial_port_fd, &termios_p);
+
+    //changes in termios_p won't affect termios_save behond this line...
+    //memcpy(&termios_save, &termios_p, sizeof(struct termios)); //not used
+
+    termios_p.c_cflag = B115200;
+    termios_p.c_cflag |= CS8;
+    termios_p.c_cflag |= CREAD;
+    termios_p.c_iflag = IGNPAR | IGNBRK;
+    termios_p.c_cflag |= CLOCAL;
+    termios_p.c_oflag = 0;
+    termios_p.c_lflag = 0; // NOT in canonical mode
+    termios_p.c_cc[VTIME] = 1; //5; // half a second timeout
+    termios_p.c_cc[VMIN] = 0;  // select timeout mode
+
+
+
+    memcpy(&termios_save, &termios_p, sizeof(struct termios));
+
+    //! trying the following lines to restart serial port, see read_stepping() function
+    tcsetattr(serial_port_fd, TCSANOW, &termios_p);
+    tcflush(serial_port_fd, TCOFLUSH);
+    tcflush(serial_port_fd, TCIFLUSH);
+
+    //  unsigned char out_data[2]={0xff, 0};
+    //  write(serial_port_fd, out_data, 1);
+
+    sleep(1);
+
+    ROS_INFO ("Finished opening serial");
+
+    return 0;
+  }
+
+  /**
+     called by read_values
+     *	b is length GLOVE_SIZE + 2 because the first two characters returned are G and ' '
+     */
+  int CyberGloveRaw::read_stepping(int fd, unsigned char *b, int n)
+  {
+    int i=0;
+    //fd_set fdset;
+    int res=0;
+    int remain;
+    //int counter=0;
+    remain = n;
+
+    do
+    {
+      res=read(fd, &b[i], remain);
+      if (res>0)
+      {
+        remain -= res;
+        i += res;
+      }
+
+      if (res<0)
+      {
+        ROS_ERROR("readg error!");
+        return 1;
+      }
+      if (res==0)
+      {
+        strcpy(glove_message, "(glove read failed, is it connected?)");
+        //counter++; error(0,0,"returned no data");
+        //HACK without this the glove will sometimes freeze
+        tcsetattr(serial_port_fd, TCSANOW, &termios_save);
+        return 1;
+      }
+
+      if (remain)
+      {
+        usleep (remain * 500); //wait for more characters to appear on the port
+      }
+    } while ( /* (counter<10) && */ remain);
+
+    return (remain!=0);
+  }
+
+  void  CyberGloveRaw::writeg(int fd, char *b, int n)
+  {
+    int i;
+    for (i=0;i<n;i++)
+    {
+      ssize_t result = write(fd, &b[i], 1);
+      if (result != 1)
+      {
+        ROS_WARN_STREAM("Serial write returned " << result);
+      }
+    }
+    //  usleep(10*n);
+  }
+
+//read the position values from the glove
+  void CyberGloveRaw::read_sensor_values()
+  {
+    while (1)
+    {
+      tcflush(serial_port_fd, TCIFLUSH);
+      tcflush(serial_port_fd, TCOFLUSH);
+      writeg(serial_port_fd, (char*)"G", 1);
+      int i;
+      unsigned char ch[GLOVE_SIZE+2]={0}; //assigns 0 to the first char
+
+      usleep(GLOVE_SIZE*10);
+      //  int res=read(serial_port_fd, &ch, GLOVE_SIZE+2);
+      //  if (res<0) error(1,errno, "reading from serial port");
+      if (read_stepping(serial_port_fd, (unsigned char*)&ch, GLOVE_SIZE+2))
+      {
+        //error(0,0,"serial port timeout");
+        continue;
+      }
+      //  error(0,0,"res=%d, %02x %02x %02x %02x %02x %02x", res, ch[0],ch[1],ch[2],ch[3],ch[4],ch[5]);
+
+      if (ch[0] != 'G')
+      {
+        //error(0,0,"NO G");
+        //log_message("%s: Failure reading glove: No G", timestamp());
+        continue;
+      }
+
+      //! if any of the values are zero restart read as not considered reliable
+      for (i=0; i<GLOVE_SIZE; i++)
+      {
+        if (ch[i+1]==0)
+        {
+          //error(0,0,"Restart %d!", i);
+          //log_message("%s: Restart %d", timestamp(), i);
+          continue;
+        }
+      }
+
+      for (i=0; i<GLOVE_SIZE; i++)
+      {
+        gl_values[gl_sensors[i]] = (ch[i+1]-1.0)/254.0;
+
+      }
       break;
     }
-    else
-    {
-      //this is a glove sensor value, a status byte or a "message end"
-      switch (glove_pos_index_)
-      {
-        case glove_size_:
-          //the last char of the msg is the status byte
-
-          //the status bit 1 corresponds to the button
-          if (current_value_ & 2)
-            button_on_ = true;
-          else
-            button_on_ = false;
-          //the status bit 2 corresponds to the light
-          if (current_value_ & 4)
-            light_on_ = true;
-          else
-            light_on_ = false;
-
-          break;
-
-        case glove_size_ + 1:
-          //the last char of the line should be 0
-          //if it is 0, then the full message has been received,
-          //and we call the callback function.
-          if (current_value_ == 0 && no_errors_)
-            callback_function_(glove_positions_, light_on_);
-          break;
-
-        default:
-          //this is a joint data from the glove
-          //the value in the message should never be 0.
-          if (current_value_ == 0)
-            no_errors_ = false;
-          // the values sent by the glove are in the range [1;254]
-          //   -> we convert them to float in the range [0;1]
-          glove_positions_[glove_pos_index_] = (((float) current_value_) - 1.0) / 254.0;
-          break;
-      }
-      ++glove_pos_index_;
-    }
   }
-}
 
-void CybergloveSerial::read_thread()
-{
-  char data[128];
-
-  struct pollfd ufd;
-  ufd.fd = fd_;
-  ufd.events = POLLIN;
-
-  while (!stop_stream_)
+//read the button value from the glove
+  void CyberGloveRaw::read_button_value()
   {
-    if (!stream_paused_)
+    while (1)
     {
-      int poll_ret = poll(&ufd, 1, 10);
+      tcflush(serial_port_fd, TCIFLUSH);
+      tcflush(serial_port_fd, TCOFLUSH);
+      writeg(serial_port_fd, (char*)"?W", 2);
+      unsigned char ch[3]={0};    //assigns 0 to the first char
 
-      ROS_INFO_STREAM_THROTTLE(1, "poll_ret " << poll_ret << " ufd.revents " << ufd.revents);
-
-      if (poll_ret > 0 && ufd.revents != POLLERR)
+      //TODO : this should be reduced ?
+      usleep(GLOVE_SIZE*10);
+      if (read_stepping(serial_port_fd, (unsigned char*)&ch, 3))
       {
-        int ret = read(fd_, data, 128);
-        ROS_INFO_STREAM_THROTTLE(1, "read_ret " << ret);
-        if (ret > 0)
-          stream_callback(data, ret);
+        continue;
       }
+
+      gl_button = ch[2];
+      break;
     }
   }
+
+  std::string CyberGloveRaw::tolower(std::string inputstring)
+  {
+    std::string result = inputstring;
+    std::transform(result.begin(), result.end(), result.begin(), ::tolower);
+    return result;
+  }
+
+
 }
+
+int main(int argc, char **argv)
+{
+        ros::init(argc, argv, "cybergloveplus_raw");
+
+        CyberGlovePlus::CyberGloveRaw glove;
+
+        int res;
+        if ((res = glove.init()) == 0)
+        {
+                glove.run();
+        }
+        else
+        {
+                ROS_INFO("Could not init glove plus");
+        }
+
+    return 0;
 }
 
 /* For the emacs weenies in the crowd.
-Local Variables:
+   Local Variables:
    c-basic-offset: 2
-End:
- */
+   End:
+*/
