@@ -1,8 +1,9 @@
 <launch>
 
-  <param name="robot_description" textfile="$(find cyberglove)/model/cyberglove.xml"/>
+  <param name="glove_description" textfile="$(find cyberglove)/model/cyberglove.xml"/>
 
   <node pkg="cyberglove" name="cyberglove" type="cyberglove" output="screen">
+    <remap from="robot_description" to="glove_description"/>
     <param name="cyberglove_prefix" type="string" value="/cyberglove" />
     <rosparam command="load" file="$(find sr_cyberglove_config)/serial/serial_port.yaml" />
     <param name="path_to_calibration" type="string" value="$(find sr_cyberglove_config)/calibrations/cyberglove.cal" />
@@ -10,6 +11,7 @@
 
   <!-- Robot state publisher -->
   <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher">
+    <remap from="robot_description" to="glove_description"/>
     <param name="publish_frequency" type="double" value="10.0" />
     <param name="tf_prefix" type="string" value="" />
   </node>
