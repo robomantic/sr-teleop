@@ -67,11 +67,7 @@ ShadowhandToCybergloveRemapper::ShadowhandToCybergloveRemapper() :
 
   cyberglove_jointstates_sub = node.subscribe(full_topic, 10, &ShadowhandToCybergloveRemapper::jointstatesCallback, this);
 
-  n_tilde.searchParam("sendupdate_prefix", searched_param);
-  n_tilde.param(searched_param, prefix, string());
-  full_topic = prefix + "sendupdate";
-
-  shadowhand_pub = node.advertise<sr_robot_msgs::sendupdate> (full_topic, 5);
+  shadowhand_pub = n_tilde.advertise<sensor_msgs::JointState> ("joint_states", 1);
 }
 
 void ShadowhandToCybergloveRemapper::init_names()
@@ -96,27 +92,26 @@ void ShadowhandToCybergloveRemapper::init_names()
   joints_names[17] = "LFJ5";
   joints_names[18] = "WRJ1";
   joints_names[19] = "WRJ2";
+
+  for (size_t i = 0; i < joints_names.size(); ++i)
+  {
+    joint_state_msg.name.push_back(joints_names[i]);
+    joint_state_msg.position.push_back(0.0);
+  }
 }
 
 void ShadowhandToCybergloveRemapper::jointstatesCallback(const sensor_msgs::JointStateConstPtr& msg)
 {
-  sr_robot_msgs::joint joint;
-  sr_robot_msgs::sendupdate pub;
-
   //Do conversion
   vector<double> vect = calibration_parser->get_remapped_vector(msg->position);
-  //Generate sendupdate message
-  pub.sendupdate_length = number_hand_joints;
+  ros::Time now = ros::Time::now();
+  joint_state_msg.header.stamp = now;
 
-  vector<sr_robot_msgs::joint> table(number_hand_joints);
   for (unsigned int i = 0; i < number_hand_joints; ++i)
   {
-    joint.joint_name = joints_names[i];
-    joint.joint_target = vect[i];
-    table[i] = joint;
+    joint_state_msg.position[i] = vect[i];
   }
-  pub.sendupdate_length = number_hand_joints;
-  pub.sendupdate_list = table;
-  shadowhand_pub.publish(pub);
+
+  shadowhand_pub.publish(joint_state_msg);
 }
 }//end namespace

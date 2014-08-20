@@ -47,6 +47,7 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_executable(cyberglove
   src/serial_glove.cpp
+  src/xml_calibration_parser.cpp
 )
 
 add_dependencies(cyberglove

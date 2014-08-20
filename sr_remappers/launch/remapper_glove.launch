@@ -5,5 +5,16 @@
     <param name="sendupdate_prefix" type="string" value="/srh/" />
     <param name="cyberglove_mapping_path" type="string" value="$(find sr_cyberglove_config)/mappings/GloveToHandMappings_generic" />
   </node>
-</launch>
 
+  <include file="$(find sr_description)/loaders/load_hand_model.launch"/>
+  <node pkg="robot_state_publisher" type="state_publisher"
+	name="cyberglove_state_publisher">
+    <remap from="robot_description" to="sh_description"/>
+    <remap from="joint_states" to="cyberglove_remapper/joint_states" />
+    <param name="publish_frequency" type="double" value="10.0" />
+    <param name="tf_prefix" type="string" value="cyberglove" />
+  </node>
+  <node pkg="tf" type="static_transform_publisher" name="hand_to_glove_static_pub"
+	args="0 0 0 0 0 0 /forearm /cyberglove/forearm 100" />
+
+</launch>

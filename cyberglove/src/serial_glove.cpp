@@ -45,6 +45,12 @@ namespace CyberGlovePlus
     }
     ROS_INFO("Frequency is %d", gl_frequency);
 
+    std::string path_to_calibration;
+    n_tilde.param("path_to_calibration", path_to_calibration, std::string("/etc/robot/calibration.d/cyberglove.cal"));
+    ROS_INFO_STREAM("Calibration file loaded for the Cyberglove: " << path_to_calibration)
+;
+    calibration_parser.init(path_to_calibration);
+
     return init_glove();
   }
 
@@ -68,11 +74,18 @@ namespace CyberGlovePlus
   {
     jointstate_raw_msg.position.clear();
     jointstate_raw_msg.velocity.clear();
+
+    jointstate_calibrated_msg.position.clear();
+    jointstate_calibrated_msg.velocity.clear();
     for(int i = 0; i < GLOVE_SIZE; i++)
     {
       jointstate_raw_msg.position.push_back(gl_values[gl_sensors[i]]);
+
+      double calibrated_value = calibration_parser.get_calibration_value(gl_values[gl_sensors[i]], gl_sensors[i]);
+      jointstate_calibrated_msg.position.push_back(calibrated_value);
     }
     raw_pub.publish(jointstate_raw_msg);
+    calibrated_pub.publish(jointstate_calibrated_msg);
   }
 
   void CyberGloveRaw::print_params()
@@ -111,15 +124,15 @@ namespace CyberGlovePlus
     for (int i = 0; i < GLOVE_SIZE; i++)
     {
       jointstate_raw_msg.name.push_back(gl_sensors[i]);
+      jointstate_calibrated_msg.name.push_back(gl_sensors[i]);
+
       gl_values[gl_sensors[i]] = 0;
     }
 
     std::string prefix, full_topic, calibrated_full_topic;
 
-    prefix = "/cybergloveplus";
-
-    full_topic = prefix + "/raw/joint_states";
-    raw_pub = n_tilde.advertise<sensor_msgs::JointState>(full_topic, 2);
+    raw_pub = n_tilde.advertise<sensor_msgs::JointState>("raw/joint_states", 1);
+    calibrated_pub = n_tilde.advertise<sensor_msgs::JointState>("calibrated/joint_states", 1);
 
     return open_serial(gl_serial_port);
   }

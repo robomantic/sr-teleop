@@ -85,6 +85,8 @@ private:
    */
   void jointstatesCallback(const sensor_msgs::JointStateConstPtr& msg);
 
+  sensor_msgs::JointState joint_state_msg;
+
 }; // end class
 
 } //end namespace
