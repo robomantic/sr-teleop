@@ -110,7 +110,13 @@ class ShuttleXpressUsb(object):
             wheel -= 256
 
         self.__state.shuttle_wheel = wheel
-        self.__state.rotating_dial = data[1]
+
+        dial = data[1]
+
+        if dial > 127:
+            dial -= 256
+
+        self.__state.rotating_dial = dial
 
         # the first four buttons are using binary bit masks
         for i in range(4):
