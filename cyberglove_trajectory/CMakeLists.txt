@@ -86,7 +86,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES cyberglove_trajectory
-#  CATKIN_DEPENDS cyberglove roscpp sr_remappers trajectory_msgs
+  CATKIN_DEPENDS cyberglove roscpp sr_remappers trajectory_msgs
 #  DEPENDS system_lib
 )
 

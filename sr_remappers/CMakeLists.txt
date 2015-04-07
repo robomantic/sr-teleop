@@ -127,3 +127,7 @@ target_link_libraries(cyberglove_remapper
 install(TARGETS cyberglove_remapper
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+install(DIRECTORY include/sr_remappers/
+   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
