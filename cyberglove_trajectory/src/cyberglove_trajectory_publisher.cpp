@@ -197,7 +197,7 @@ const std::vector<std::string> CybergloveTrajectoryPublisher::joint_mapping_vect
     trajectory_delay_ = ros::Duration(delay);
 
     //initialize the connection with the cyberglove and binds the callback function
-    serial_glove = boost::shared_ptr<CybergloveSerial>(new CybergloveSerial(path_to_glove, cyberglove_version_, streaming_protocol_, boost::bind(&CybergloveTrajectoryPublisher::glove_callback, this, _1, _2)));
+    serial_glove = boost::shared_ptr<CybergloveSerial>(new CybergloveSerial(path_to_glove, cyberglove_version_, cyberglove_joint_number_, streaming_protocol_, boost::bind(&CybergloveTrajectoryPublisher::glove_callback, this, _1, _2)));
 
     int res = -1;
     if(cyberglove_version_ == "2")

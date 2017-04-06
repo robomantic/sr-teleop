@@ -38,21 +38,21 @@ namespace cyberglove_freq
 
 namespace cyberglove
 {
-  const unsigned short CybergloveSerial::glove_size = 22;
   const unsigned short CybergloveSerial::timestamp_size = 14;
-
-  CybergloveSerial::CybergloveSerial(std::string serial_port, std::string cyberglove_version, std::string streaming_protocol, boost::function<void(std::vector<float>, bool)> callback) :
-    nb_msgs_received(0), glove_pos_index(0), timestamp_bytes_(0), byte_index_(0), current_value(0), sensor_value_(0), light_on(true), button_on(true), no_errors(true),
+  
+  CybergloveSerial::CybergloveSerial(std::string serial_port, std::string cyberglove_version, unsigned short glove_size, std::string streaming_protocol, boost::function<void(std::vector<float>, bool)> callback) :
+    nb_msgs_received(0), glove_pos_index(0), timestamp_bytes_(0), byte_index_(0), glove_size_(glove_size), current_value(0), sensor_value_(0), light_on(true), button_on(true), no_errors(true),
     cyberglove_version_(cyberglove_version), reception_state_(INITIAL), streaming_protocol_(streaming_protocol)
   {
     //initialize the vector of positions with 0s
-    for (int i = 0; i < glove_size; ++i)
+    for (int i = 0; i < glove_size_; ++i)
     {
       glove_positions.push_back(0);
     }
 
     //open the serial port
     cereal_port = boost::shared_ptr<cereal::CerealPort>(new cereal::CerealPort());
+    std::cout << "cereal port created" << std::endl;
     cereal_port->open(serial_port.c_str());
 
     //set the callback function
@@ -147,12 +147,13 @@ namespace cyberglove
       sleep(1);
       cereal_port->flush();
     }
-
     return 0;
   }
 
   void CybergloveSerial::stream_callback(char* world, int length)
   {
+    
+    // std::cout << "received " <<(unsigned int)(unsigned char)world[0]<<std::endl;
     //read each received char.
     for (int i = 0; i < length; ++i)
     {
@@ -262,7 +263,7 @@ namespace cyberglove
               std::cout << "error detected" << std::endl;
             }
 
-            if (glove_pos_index == glove_size)
+            if (glove_pos_index == glove_size_)
             {
               if(no_errors)
                 callback_function(glove_positions, true);
@@ -291,14 +292,28 @@ namespace cyberglove
             break;
           case RECEIVING_FRAME:
             //this is a glove sensor value, a status byte or a "message end"
-            switch( glove_pos_index )
+            if (glove_pos_index < glove_size_) //default
             {
-            case glove_size:
-              if(cyberglove_version_ == "1")
+              //this is a joint data from the glove
+              //the value in the message should never be 0.
+              if( current_value == 0)
               {
-                // Cyberglove I doesn't provide information on the LED light state
-                // so we will consider it's always on
-                light_on = true;
+                no_errors = false;
+              }
+              // the values sent by the glove are in the range [1;254]
+              //   -> we convert them to float in the range [0;1]
+              glove_positions[glove_pos_index] = (((float)current_value) - 1.0f) / 254.0f;            
+            }
+            else
+            {
+              if (glove_pos_index == glove_size_)
+              {
+                if(cyberglove_version_ == "1")
+                {
+                  // Cyberglove I doesn't provide information on the LED light state
+                  // so we will consider it's always on
+                  light_on = true;
+                }
               }
               else if(cyberglove_version_ == "2")
               {
@@ -327,9 +342,10 @@ namespace cyberglove
 
                 reception_state_ = INITIAL;
               }
-              break;
+            }
 
-            case glove_size + 1:
+            if (glove_pos_index == glove_size_+1)
+            {
               if(cyberglove_version_ == "1")
               {
                 //the last char of the line should be 'S' (83) but this is an assumption not based on documentation
@@ -352,19 +368,6 @@ namespace cyberglove
                   std::cout << "Last char is not 0: " << current_value << std::endl;
               }
               reception_state_ = INITIAL;
-              break;
-
-            default:
-              //this is a joint data from the glove
-              //the value in the message should never be 0.
-              if( current_value == 0)
-              {
-                no_errors = false;
-              }
-              // the values sent by the glove are in the range [1;254]
-              //   -> we convert them to float in the range [0;1]
-              glove_positions[glove_pos_index] = (((float)current_value) - 1.0f) / 254.0f;
-              break;
             }
             ++glove_pos_index;
             break;

@@ -124,7 +124,7 @@ namespace cyberglove
      * @param callback a pointer to a callback function, which will be called each time a
      *                 complete joint message is received.
      */
-    CybergloveSerial(std::string serial_port, std::string cyberglove_version, std::string streaming_protocol, boost::function<void(std::vector<float>, bool)> callback);
+    CybergloveSerial(std::string serial_port, std::string cyberglove_version, unsigned short glove_size, std::string streaming_protocol, boost::function<void(std::vector<float>, bool)> callback);
     ~CybergloveSerial();
 
     /**
@@ -203,6 +203,7 @@ namespace cyberglove
     void stream_callback(char* world, int length);
 
     int nb_msgs_received, glove_pos_index, timestamp_bytes_, byte_index_;
+    const unsigned short glove_size_;
     /// A vector containing the current joints positions.
     std::vector<float> glove_positions;
 
