@@ -130,15 +130,21 @@ namespace cyberglove
     {
       // enable USB streaming
       cereal_port->write("1eu", 3);
+      //wait for the command to be applied
+      sleep(1);
       cereal_port->flush();
       // start streaming by writing 1S to the serial port
       cereal_port->write("1S", 2);
+      //wait for the command to be applied
+      sleep(1);
       cereal_port->flush();
     }
     else
     {
       //start streaming by writing S to the serial port
       cereal_port->write("S", 1);
+      //wait for the command to be applied
+      sleep(1);
       cereal_port->flush();
     }
 
