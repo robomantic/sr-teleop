@@ -299,6 +299,8 @@ namespace cyberglove
               if( current_value == 0)
               {
                 no_errors = false;
+                std::cout << "invalid 0 in the middle of the stream resyncing... (are you sure the number of joint is correct ?) " << std::endl;
+                reception_state_ = INITIAL; 
               }
               // the values sent by the glove are in the range [1;254]
               //   -> we convert them to float in the range [0;1]
@@ -313,61 +315,59 @@ namespace cyberglove
                   // Cyberglove I doesn't provide information on the LED light state
                   // so we will consider it's always on
                   light_on = true;
+                  //the last char of the line should be 'S' (83) but this is an assumption not based on documentation
+                  // most of the time we get 83, but other numbers have been observed occasionally
+                  //if it is 83, then the full message has been received,
+                  //and we call the callback function.
+                  if( current_value == 0 && no_errors)
+                    callback_function(glove_positions, light_on);
+                  if( current_value != 0 )
+                    std::cout << "Last char is not 0: " << current_value << std::endl;
+                  reception_state_ = INITIAL;  
+                }
+                else if(cyberglove_version_ == "2")
+                {
+                  //the last char of the msg is the status byte
+
+                  //the status bit 1 corresponds to the button
+                  if(current_value & 2)
+                    button_on = true;
+                  else
+                    button_on = false;
+                  //the status bit 2 corresponds to the light
+                  if(current_value & 4)
+                    light_on = true;
+                  else
+                    light_on = false;
+                }
+                else
+                {
+                  //the last char of the line should be 0
+                  //if it is 0, then the full message has been received,
+                  //and we call the callback function.
+                  if( current_value == 0 && no_errors)
+                    callback_function(glove_positions, light_on);
+                  if( current_value != 0)
+                    std::cout << "Last char is not 0: " << current_value << std::endl;
+
+                  reception_state_ = INITIAL;
                 }
               }
-              else if(cyberglove_version_ == "2")
+            
+              if (glove_pos_index == glove_size_+1)
               {
-                //the last char of the msg is the status byte
-
-                //the status bit 1 corresponds to the button
-                if(current_value & 2)
-                  button_on = true;
-                else
-                  button_on = false;
-                //the status bit 2 corresponds to the light
-                if(current_value & 4)
-                  light_on = true;
-                else
-                  light_on = false;
-              }
-              else
-              {
-                //the last char of the line should be 0
-                //if it is 0, then the full message has been received,
-                //and we call the callback function.
-                if( current_value == 0 && no_errors)
-                  callback_function(glove_positions, light_on);
-                if( current_value != 0)
-                  std::cout << "Last char is not 0: " << current_value << std::endl;
-
+                if(cyberglove_version_ == "2")
+                {
+                  //the last char of the line should be 0
+                  //if it is 0, then the full message has been received,
+                  //and we call the callback function.
+                  if( current_value == 0 && no_errors)
+                    callback_function(glove_positions, light_on);
+                  if( current_value != 0)
+                    std::cout << "Last char is not 0: " << current_value << std::endl;
+                }
                 reception_state_ = INITIAL;
               }
-            }
-
-            if (glove_pos_index == glove_size_+1)
-            {
-              if(cyberglove_version_ == "1")
-              {
-                //the last char of the line should be 'S' (83) but this is an assumption not based on documentation
-                // most of the time we get 83, but other numbers have been observed occasionally
-                //if it is 83, then the full message has been received,
-                //and we call the callback function.
-                if( current_value == 83 && no_errors)
-                  callback_function(glove_positions, light_on);
-                if( current_value != 83)
-                  std::cout << "Last char is not 0: " << current_value << std::endl;
-              }
-              else if(cyberglove_version_ == "2")
-              {
-                //the last char of the line should be 0
-                //if it is 0, then the full message has been received,
-                //and we call the callback function.
-                if( current_value == 0 && no_errors)
-                  callback_function(glove_positions, light_on);
-                if( current_value != 0)
-                  std::cout << "Last char is not 0: " << current_value << std::endl;
-              }
-              reception_state_ = INITIAL;
             }
             ++glove_pos_index;
             break;
