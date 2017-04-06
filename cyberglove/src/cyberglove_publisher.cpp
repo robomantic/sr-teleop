@@ -68,9 +68,18 @@ namespace cyberglove{
     ROS_INFO_STREAM("Sampling at " << sampling_freq << "Hz ; Publishing at "
                     << publish_freq << "Hz ; Publish counter: "<< publish_counter_max);
 
-    //Get the cyberglove version '2' or '3'
+    //Get the cyberglove version '1', '2' or '3'
     n_tilde.param("cyberglove_version", cyberglove_version_, std::string("2"));
     ROS_INFO("Cyberglove version: %s", cyberglove_version_.c_str());
+    
+    //Get the cyberglove joint number '18' or '22'
+    n_tilde.param("cyberglove_joint_number", cyberglove_joint_number_, 22);
+    if (cyberglove_joint_number_ != 22 && cyberglove_joint_number_ != 18)
+    {
+      ROS_FATAL("Cybergloves with %d joints are not supported, use 18 or 22", cyberglove_joint_number_);
+      throw -1;
+    }
+    ROS_INFO("Cyberglove joint number: %d", cyberglove_joint_number_);
 
     //Get the cyberglove streaming protocol '8bit' or '16bit'
     n_tilde.param("streaming_protocol", streaming_protocol_, std::string("8bit"));
@@ -138,18 +147,22 @@ namespace cyberglove{
     jointstate_msg.name.push_back("G_ThumbAb");
     jointstate_msg.name.push_back("G_IndexMPJ");
     jointstate_msg.name.push_back("G_IndexPIJ");
-    jointstate_msg.name.push_back("G_IndexDIJ");
+    if (cyberglove_joint_number_ == 22)
+      jointstate_msg.name.push_back("G_IndexDIJ");
     jointstate_msg.name.push_back("G_MiddleMPJ");
     jointstate_msg.name.push_back("G_MiddlePIJ");
-    jointstate_msg.name.push_back("G_MiddleDIJ");
+    if (cyberglove_joint_number_ == 22)
+      jointstate_msg.name.push_back("G_MiddleDIJ");
     jointstate_msg.name.push_back("G_MiddleIndexAb");
     jointstate_msg.name.push_back("G_RingMPJ");
     jointstate_msg.name.push_back("G_RingPIJ");
-    jointstate_msg.name.push_back("G_RingDIJ");
+    if (cyberglove_joint_number_ == 22)
+      jointstate_msg.name.push_back("G_RingDIJ");
     jointstate_msg.name.push_back("G_RingMiddleAb");
     jointstate_msg.name.push_back("G_PinkieMPJ");
     jointstate_msg.name.push_back("G_PinkiePIJ");
-    jointstate_msg.name.push_back("G_PinkieDIJ");
+    if (cyberglove_joint_number_ == 22)
+      jointstate_msg.name.push_back("G_PinkieDIJ");
     jointstate_msg.name.push_back("G_PinkieRingAb");
     jointstate_msg.name.push_back("G_PalmArch");
     jointstate_msg.name.push_back("G_WristPitch");
@@ -218,7 +231,7 @@ namespace cyberglove{
       jointstate_raw_msg.header.stamp = ros::Time::now();
 
       //fill the joint_state msg with the averaged glove data
-      for(unsigned int index_joint = 0; index_joint < CybergloveSerial::glove_size; ++index_joint)
+      for(unsigned int index_joint = 0; index_joint < cyberglove_joint_number_; ++index_joint)
       {
         //compute the average over the samples for the current joint
         float averaged_value = 0.0f;

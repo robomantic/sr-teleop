@@ -87,35 +87,6 @@ const std::vector<std::string> CybergloveTrajectoryPublisher::joint_mapping_vect
                                                                                   ("LFJ5")
                                                                                   ("WRJ1")
                                                                                   ("WRJ2");
-
-
-
-
-
-//initialises joint names (the order is important)
-const std::vector<std::string> CybergloveTrajectoryPublisher::glove_sensors_vector_ = boost::assign::list_of
-                                                                                    ("G_ThumbRotate")
-                                                                                    ("G_ThumbMPJ")
-                                                                                    ("G_ThumbIJ")
-                                                                                    ("G_ThumbAb")
-                                                                                    ("G_IndexMPJ")
-                                                                                    ("G_IndexPIJ")
-                                                                                    ("G_IndexDIJ")
-                                                                                    ("G_MiddleMPJ")
-                                                                                    ("G_MiddlePIJ")
-                                                                                    ("G_MiddleDIJ")
-                                                                                    ("G_MiddleIndexAb")
-                                                                                    ("G_RingMPJ")
-                                                                                    ("G_RingPIJ")
-                                                                                    ("G_RingDIJ")
-                                                                                    ("G_RingMiddleAb")
-                                                                                    ("G_PinkieMPJ")
-                                                                                    ("G_PinkiePIJ")
-                                                                                    ("G_PinkieDIJ")
-                                                                                    ("G_PinkieRingAb")
-                                                                                    ("G_PalmArch")
-                                                                                    ("G_WristPitch")
-                                                                                    ("G_WristYaw");
   /////////////////////////////////
   //    CONSTRUCTOR/DESTRUCTOR   //
   /////////////////////////////////
@@ -147,29 +118,7 @@ const std::vector<std::string> CybergloveTrajectoryPublisher::glove_sensors_vect
 
     cyberglove_raw_pub = n_tilde.advertise<sensor_msgs::JointState>("raw/joint_states", 2);
 
-    //initialises joint names (the order is important)
-    jointstate_msg.name.push_back("G_ThumbRotate");
-    jointstate_msg.name.push_back("G_ThumbMPJ");
-    jointstate_msg.name.push_back("G_ThumbIJ");
-    jointstate_msg.name.push_back("G_ThumbAb");
-    jointstate_msg.name.push_back("G_IndexMPJ");
-    jointstate_msg.name.push_back("G_IndexPIJ");
-    jointstate_msg.name.push_back("G_IndexDIJ");
-    jointstate_msg.name.push_back("G_MiddleMPJ");
-    jointstate_msg.name.push_back("G_MiddlePIJ");
-    jointstate_msg.name.push_back("G_MiddleDIJ");
-    jointstate_msg.name.push_back("G_MiddleIndexAb");
-    jointstate_msg.name.push_back("G_RingMPJ");
-    jointstate_msg.name.push_back("G_RingPIJ");
-    jointstate_msg.name.push_back("G_RingDIJ");
-    jointstate_msg.name.push_back("G_RingMiddleAb");
-    jointstate_msg.name.push_back("G_PinkieMPJ");
-    jointstate_msg.name.push_back("G_PinkiePIJ");
-    jointstate_msg.name.push_back("G_PinkieDIJ");
-    jointstate_msg.name.push_back("G_PinkieRingAb");
-    jointstate_msg.name.push_back("G_PalmArch");
-    jointstate_msg.name.push_back("G_WristPitch");
-    jointstate_msg.name.push_back("G_WristYaw");
+   
 
 
     //set sampling frequency
@@ -188,6 +137,43 @@ const std::vector<std::string> CybergloveTrajectoryPublisher::glove_sensors_vect
     //Get the cyberglove version '2' or '3'
     n_tilde.param("cyberglove_version", cyberglove_version_, std::string("2"));
     ROS_INFO("Cyberglove version: %s", cyberglove_version_.c_str());
+    
+    //Get the cyberglove joint number '18' or '22'
+    n_tilde.param("cyberglove_joint_number", cyberglove_joint_number_, 22);
+    if (cyberglove_joint_number_ != 22 && cyberglove_joint_number_ != 18)
+    {
+      ROS_FATAL("Cybergloves with %d joints are not supported, use 18 or 22", cyberglove_joint_number_);
+      throw -1;
+    }
+    ROS_INFO("Cyberglove joint number: %d", cyberglove_joint_number_);
+
+    //initialises joint names (the order is important)      
+    jointstate_msg.name.push_back("G_ThumbRotate");
+    jointstate_msg.name.push_back("G_ThumbMPJ");
+    jointstate_msg.name.push_back("G_ThumbIJ");
+    jointstate_msg.name.push_back("G_ThumbAb");
+    jointstate_msg.name.push_back("G_IndexMPJ");
+    jointstate_msg.name.push_back("G_IndexPIJ");
+    if (cyberglove_joint_number_ == 22)
+      jointstate_msg.name.push_back("G_IndexDIJ");
+    jointstate_msg.name.push_back("G_MiddleMPJ");
+    jointstate_msg.name.push_back("G_MiddlePIJ");
+    if (cyberglove_joint_number_ == 22)
+      jointstate_msg.name.push_back("G_MiddleDIJ");
+    jointstate_msg.name.push_back("G_MiddleIndexAb");
+    jointstate_msg.name.push_back("G_RingMPJ");
+    jointstate_msg.name.push_back("G_RingPIJ");
+    if (cyberglove_joint_number_ == 22)
+      jointstate_msg.name.push_back("G_RingDIJ");
+    jointstate_msg.name.push_back("G_RingMiddleAb");
+    jointstate_msg.name.push_back("G_PinkieMPJ");
+    jointstate_msg.name.push_back("G_PinkiePIJ");
+    if (cyberglove_joint_number_ == 22)
+      jointstate_msg.name.push_back("G_PinkieDIJ");
+    jointstate_msg.name.push_back("G_PinkieRingAb");
+    jointstate_msg.name.push_back("G_PalmArch");
+    jointstate_msg.name.push_back("G_WristPitch");
+    jointstate_msg.name.push_back("G_WristYaw");
 
     //Get the cyberglove streaming protocol '8bit' or '16bit'
     n_tilde.param("streaming_protocol", streaming_protocol_, std::string("8bit"));
@@ -302,7 +288,7 @@ const std::vector<std::string> CybergloveTrajectoryPublisher::glove_sensors_vect
       jointstate_msg.header.stamp = ros::Time::now();
 
       //fill the joint_state msg with the averaged glove data
-      for(unsigned int index_joint = 0; index_joint < CybergloveSerial::glove_size; ++index_joint)
+      for(unsigned int index_joint = 0; index_joint < cyberglove_joint_number_; ++index_joint)
       {
         //compute the average over the samples for the current joint
         float averaged_value = 0.0f;
@@ -312,7 +298,7 @@ const std::vector<std::string> CybergloveTrajectoryPublisher::glove_sensors_vect
         }
         averaged_value /= publish_counter_max;
 
-	calibration_tmp = calibration_map->find(glove_sensors_vector_[index_joint]);
+	calibration_tmp = calibration_map->find(jointstate_msg.name[index_joint]);
 	double calibration_value = calibration_tmp->compute(static_cast<double> (averaged_value));
 
 	jointstate_msg.position.push_back(averaged_value);

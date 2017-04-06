@@ -48,11 +48,16 @@ using namespace cyberglove;
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "cyberglove_trajectory_node");
-
-  boost::shared_ptr<CybergloveTrajectoryPublisher> cyberglove_pub(new CybergloveTrajectoryPublisher());
-
-  ros::spin();
-
+  try
+  {
+    boost::shared_ptr<CybergloveTrajectoryPublisher> cyberglove_pub(new CybergloveTrajectoryPublisher());
+    ros::spin();
+  }
+  catch (int e)
+  {
+    ROS_FATAL("could not create trajectory publisher, leaving");
+    return -1;
+  }
   return 0;
 }
 

@@ -130,12 +130,12 @@ namespace cyberglove{
 
     static const std::vector<std::string> joint_name_vector_;
     static const std::vector<std::string> joint_mapping_vector_;
-    static const std::vector<std::string> glove_sensors_vector_;
 
     boost::scoped_ptr<actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> > action_client_;
     control_msgs::FollowJointTrajectoryGoal trajectory_goal_;
 
     std::string cyberglove_version_;
+    int cyberglove_joint_number_;
     std::string streaming_protocol_;
 
     ros::Duration trajectory_tx_delay_;

@@ -2,6 +2,7 @@
   <arg name="serial_port" default="/dev/ttyUSB0"/>
   <arg name="calibration" default="$(find sr_cyberglove_config)/calibrations/cyberglove.cal"/>
   <arg name="version" default="2"/>
+  <arg name="joint_number" default="22"/>
   <arg name="protocol" default="8bit"/>
   <!-- Activate internal cybeglove data filtering -->
   <arg name="filter" default="true"/>
@@ -24,6 +25,7 @@
     <param name="path_to_glove" type="string" value="$(arg serial_port)" />
     <param name="path_to_calibration" type="string" value="$(arg calibration)" />
     <param name="cyberglove_version" type="string" value="$(arg version)" />
+    <param name="cyberglove_joint_number" type="int" value="$(arg joint_number)" />
     <param name="streaming_protocol" type="string" value="$(arg protocol)" />
     <param name="filter" type="bool" value="$(arg filter)" />
   </node>

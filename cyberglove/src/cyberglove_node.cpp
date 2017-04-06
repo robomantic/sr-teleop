@@ -51,12 +51,18 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "cyberglove_publisher");
   //NodeHandle n;
-  boost::shared_ptr<CyberglovePublisher> cyberglove_pub(new CyberglovePublisher());
-
-  CybergloveService service(cyberglove_pub);
-
-  ros::spin();
-
+  try
+  {
+    boost::shared_ptr<CyberglovePublisher> cyberglove_pub(new CyberglovePublisher());
+    CybergloveService service(cyberglove_pub);
+    ros::spin();
+  }
+  catch (int e)
+  {
+    ROS_FATAL("could not create publisher, leaving");
+    return -1;
+  }
+  
   return 0;
 }
 
