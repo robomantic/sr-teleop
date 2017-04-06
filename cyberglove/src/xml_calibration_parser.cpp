@@ -40,7 +40,9 @@
 
 #include "cyberglove/xml_calibration_parser.h"
 
-#include <stdio.h>
+#include <cstdio>
+#include <string>
+#include <sstream>
 
 namespace xml_calibration_parser{
 
@@ -174,40 +176,41 @@ namespace xml_calibration_parser{
    */
   int XmlCalibrationParser::build_calibration_table()
   {
+    std::ostringstream ss;
     for (unsigned int index_calib = 0; index_calib < jointsCalibrations.size(); ++index_calib)
     {
       std::string name = jointsCalibrations[index_calib].name;
-      std::cout << name << std::endl;
+      ROS_DEBUG_STREAM(name);
 
       std::vector<Calibration> calib = jointsCalibrations[index_calib].calibrations;
 
       std::vector<float> lookup_table((int)lookup_offset*(int)lookup_precision);
 
       if( calib.size() < 2 )
-	ROS_ERROR("Not enough points were defined to set up the calibration.");
+        ROS_ERROR("Not enough points were defined to set up the calibration.");
 
       //order the calibration vector by ascending values of raw_value
       //      ROS_ERROR("TODO: calibration vector not ordered yet");
 
-      std::cout << "lookup table : ";
+      ss << "lookup table : ";
 
       //setup the lookup table
       for( unsigned int index_lookup = 0;
-	   index_lookup < lookup_table.size() ;
-	   ++ index_lookup )
-	{
-	  float value = compute_lookup_value(index_lookup, calib);
-	  std::cout << index_lookup<<":"<<value << " ";
-	  lookup_table[index_lookup] = value;
-	}
+           index_lookup < lookup_table.size() ;
+           ++ index_lookup )
+      {
+        float value = compute_lookup_value(index_lookup, calib);
+        ss << index_lookup<<":"<<value << " ";
+        lookup_table[index_lookup] = value;
+      }
 
-      std::cout << std::endl;
+      ss << std::endl;
 
       //add the values to the map
       joints_calibrations_map[name] = lookup_table;
       //joints_calibrations_map.insert(std::pair <std::string, std::vector<float> >(name, lookup_table));
     }
-
+    ROS_DEBUG_STREAM(ss);
     return 0;
   }
 
@@ -269,7 +272,7 @@ namespace xml_calibration_parser{
       {
 	//reads from the lookup table
 	int index = return_index_from_raw_position(position);
-	std::cout << index << std::endl;
+	//std::cout << index << std::endl;
 	return iter->second[index];
       }
     else
