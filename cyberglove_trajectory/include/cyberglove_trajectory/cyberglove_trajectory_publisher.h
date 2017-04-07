@@ -40,13 +40,13 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <control_msgs/FollowJointTrajectoryGoal.h>
 
-#include "cyberglove/serial_glove.hpp"
+#include <cyberglove/serial_glove.hpp>
 
 //messages
 #include <sensor_msgs/JointState.h>
 #include <sr_utilities/calibration.hpp>
 #include <sr_utilities/thread_safe_map.hpp>
-#include "sr_remappers/calibration_parser.h"
+#include <sr_remappers/calibration_parser.h>
 
 using namespace ros;
 
