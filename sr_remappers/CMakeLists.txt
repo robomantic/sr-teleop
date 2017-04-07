@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   sr_robot_msgs
   sr_cyberglove_config
-  cyberglove
 )
 
 ## System dependencies are found with CMake's conventions
@@ -65,7 +64,7 @@ find_package(Boost REQUIRED system filesystem date_time thread)
 catkin_package(
 INCLUDE_DIRS include
 LIBRARIES sr_remappers
-CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs sr_robot_msgs sr_cyberglove_config cyberglove
+CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs sr_robot_msgs sr_cyberglove_config
 #  DEPENDS system_lib
 )
 
