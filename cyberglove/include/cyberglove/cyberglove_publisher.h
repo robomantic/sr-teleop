@@ -43,66 +43,67 @@
 
 using namespace ros;
 
-namespace cyberglove{
+namespace cyberglove
+{
 
-  class CyberglovePublisher
-  {
-  public:
-    /// Constructor
-    CyberglovePublisher();
+class CyberglovePublisher
+{
+public:
+  /// Constructor
+  CyberglovePublisher();
 
-    /// Destructor
-    ~CyberglovePublisher();
+  /// Destructor
+  ~CyberglovePublisher();
 
-    Publisher cyberglove_pub;
-    void initialize_calibration(std::string path_to_calibration);
-    bool isPublishing();
-    void setPublishing(bool value);
-  private:
-    /////////////////
-    //  CALLBACKS  //
-    /////////////////
+  Publisher cyberglove_pub;
+  void initialize_calibration(std::string path_to_calibration);
+  bool isPublishing();
+  void setPublishing(bool value);
+private:
+  /////////////////
+  //  CALLBACKS  //
+  /////////////////
 
-    //ros node handle
-    NodeHandle node, n_tilde;
-    unsigned int publish_counter_max, publish_counter_index;
+  //ros node handle
+  NodeHandle node, n_tilde;
+  unsigned int publish_counter_max, publish_counter_index;
 
-    ///the actual connection with the cyberglove is done here.
-    boost::shared_ptr<CybergloveSerial> serial_glove;
+  ///the actual connection with the cyberglove is done here.
+  boost::shared_ptr<CybergloveSerial> serial_glove;
 
-    /**
-     * The callback function: called each time a full message
-     * is received. This function is bound to the serial_glove
-     * object using boost::bind.
-     *
-     * @param glove_pos A vector containing the current raw joints positions.
-     * @param light_on true if the light is on, false otherwise.
-     */
-    void glove_callback(std::vector<float> glove_pos, bool light_on);
+  /**
+   * The callback function: called each time a full message
+   * is received. This function is bound to the serial_glove
+   * object using boost::bind.
+   *
+   * @param glove_pos A vector containing the current raw joints positions.
+   * @param light_on true if the light is on, false otherwise.
+   */
+  void glove_callback(std::vector<float> glove_pos, bool light_on);
 
-    std::string path_to_glove;
-    bool publishing;
+  std::string path_to_glove;
+  bool publishing;
 
-    ///the calibration parser
-    xml_calibration_parser::XmlCalibrationParser calibration_parser;
+  ///the calibration parser
+  xml_calibration_parser::XmlCalibrationParser calibration_parser;
 
-    Publisher cyberglove_raw_pub;
+  Publisher cyberglove_raw_pub;
 
-    sensor_msgs::JointState jointstate_msg;
-    sensor_msgs::JointState jointstate_raw_msg;
+  sensor_msgs::JointState jointstate_msg;
+  sensor_msgs::JointState jointstate_raw_msg;
 
-    void add_jointstate(float position, std::string joint_name);
+  void add_jointstate(float position, std::string joint_name);
 
-    std::vector<float> calibration_values;
+  std::vector<float> calibration_values;
 
-    std::vector<std::vector<float> > glove_positions;
+  std::vector<std::vector<float> > glove_positions;
 
-    std::string cyberglove_version_;
-    int cyberglove_joint_number_;
-    std::string streaming_protocol_;
-  }; // end class CyberglovePublisher
+  std::string cyberglove_version_;
+  int cyberglove_joint_number_;
+  std::string streaming_protocol_;
+}; // end class CyberglovePublisher
 
-} // end namespace
+}  // namespace cyberglove
 #endif 	    /* !CYBERGLOVE_PUBLISHER_H_ */
 
 /* For the emacs weenies in the crowd.

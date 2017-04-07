@@ -35,7 +35,8 @@
 
 using namespace ros;
 
-namespace cyberglove{
+namespace cyberglove
+{
 
 CybergloveService::CybergloveService(boost::shared_ptr<CyberglovePublisher> publish)
  :  node("~"), pub(publish)
@@ -63,4 +64,4 @@ bool CybergloveService::calibration(cyberglove::Calibration::Request &req, cyber
     this->pub->setPublishing(true);
     return true;
 }
-}
+}  // namespace cyberglove

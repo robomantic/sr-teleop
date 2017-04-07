@@ -47,7 +47,8 @@
 #include <vector>
 #include <map>
 
-namespace xml_calibration_parser{
+namespace xml_calibration_parser
+{
 
 class XmlCalibrationParser
 {
@@ -131,5 +132,5 @@ class XmlCalibrationParser
 
 }; // end class XmlCalibrationParser
 
-} // end namespace
+}  // namespace xml_calibration_parser
 #endif 	    /* !XML_CALIBRATION_PARSER_H_ */

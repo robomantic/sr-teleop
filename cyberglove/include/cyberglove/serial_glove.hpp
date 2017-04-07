@@ -72,161 +72,161 @@
 
 namespace cyberglove_freq
 {
+/**
+ * This structure contains the different strings which are written
+ * to the serial port in order to get a given streaming frequency.
+ */
+struct CybergloveFreq
+{
   /**
-   * This structure contains the different strings which are written
-   * to the serial port in order to get a given streaming frequency.
+   *The fastest frequency is only used when testing the maximum transmission
+   * speed: it's not a stable frequency for the glove.
    */
-  struct CybergloveFreq
-  {
-    /**
-     *The fastest frequency is only used when testing the maximum transmission
-     * speed: it's not a stable frequency for the glove.
-     */
-    static const std::string fastest;
-    static const std::string hundred_hz;
-    static const std::string fourtyfive_hz;
-    static const std::string ten_hz;
-    static const std::string one_hz;
-  };
-}
+  static const std::string fastest;
+  static const std::string hundred_hz;
+  static const std::string fourtyfive_hz;
+  static const std::string ten_hz;
+  static const std::string one_hz;
+};
+}  // namespace cyberglove_freq
 
 namespace cyberglove
 {
 
-  enum reception_state
-  {
-    INITIAL,
-    RECEIVING_FRAME
-  };
+enum reception_state
+{
+  INITIAL,
+  RECEIVING_FRAME
+};
 
-  namespace reception_16bit
-  {
-    enum reception_state_16bit
-    {
-      SYNCHRONIZATION_1,
-      SYNCHRONIZATION_2,
-      SYNCHRONIZATION_3,
-      TIMESTAMP,
-      RECEIVING_FRAME
-    };
-  }
+namespace reception_16bit
+{
+enum reception_state_16bit
+{
+  SYNCHRONIZATION_1,
+  SYNCHRONIZATION_2,
+  SYNCHRONIZATION_3,
+  TIMESTAMP,
+  RECEIVING_FRAME
+};
+}  // namespace reception_16bit
+   /**
+    * This class uses the Cereal Port ROS package to connect to
+    * and interact with the Cyberglove.
+    */
+class CybergloveSerial
+{
+public:
   /**
-   * This class uses the Cereal Port ROS package to connect to
-   * and interact with the Cyberglove.
+   * Initializes the connection with the cyberglove through the given serial port.
+   *
+   * @param serial_port the path to the serial port, /dev/ttyS0 by default
+   * @param callback a pointer to a callback function, which will be called each time a
+   *                 complete joint message is received.
    */
-  class CybergloveSerial
-  {
-  public:
-    /**
-     * Initializes the connection with the cyberglove through the given serial port.
-     *
-     * @param serial_port the path to the serial port, /dev/ttyS0 by default
-     * @param callback a pointer to a callback function, which will be called each time a
-     *                 complete joint message is received.
-     */
-    CybergloveSerial(std::string serial_port, std::string cyberglove_version, unsigned short glove_size, std::string streaming_protocol, boost::function<void(std::vector<float>, bool)> callback);
-    ~CybergloveSerial();
+  CybergloveSerial(std::string serial_port, std::string cyberglove_version, unsigned short glove_size, std::string streaming_protocol, boost::function<void(std::vector<float>, bool)> callback);
+  ~CybergloveSerial();
 
-    /**
-     * Turns on or off the filtering (done directly in the cyberglove). By default the filtering
-     * is activated. We recommend turning it off if you want to do oversampling, to get the fastest
-     * rate (the rate is divided by 2-3 if the filtering is on)
-     *
-     * @param value true if you want to turn it on.
-     *
-     * @return 0 if success
-     */
-    int set_filtering(bool value);
+  /**
+   * Turns on or off the filtering (done directly in the cyberglove). By default the filtering
+   * is activated. We recommend turning it off if you want to do oversampling, to get the fastest
+   * rate (the rate is divided by 2-3 if the filtering is on)
+   *
+   * @param value true if you want to turn it on.
+   *
+   * @return 0 if success
+   */
+  int set_filtering(bool value);
 
-    /**
-     * Turns on or off the status transmission: if it's on, then a char is added to the message
-     * to describe the current status of the glove. For this status byte, the bit 1 corresponds
-     * to the button status, and the bit 2 corresponds to the light status.
-     *
-     * @param value true if you want to turn it on.
-     *
-     * @return 0 if success
-     */
-    int set_transmit_info(bool value);
+  /**
+   * Turns on or off the status transmission: if it's on, then a char is added to the message
+   * to describe the current status of the glove. For this status byte, the bit 1 corresponds
+   * to the button status, and the bit 2 corresponds to the light status.
+   *
+   * @param value true if you want to turn it on.
+   *
+   * @return 0 if success
+   */
+  int set_transmit_info(bool value);
 
-    /**
-     * Set the transmit frequency for the cyberglove.
-     *
-     * @param frequency use the elements of the struct cyberglove_freq::CybergloveFreq
-     *
-     * @return 0 if success
-     */
-    int set_frequency(std::string frequency);
+  /**
+   * Set the transmit frequency for the cyberglove.
+   *
+   * @param frequency use the elements of the struct cyberglove_freq::CybergloveFreq
+   *
+   * @return 0 if success
+   */
+  int set_frequency(std::string frequency);
 
-    /**
-     * Start streaming the data from the cyberglove, calling the
-     * callback function each time the full message is received.
-     *
-     * @return 0 if success
-     */
-    int start_stream();
+  /**
+   * Start streaming the data from the cyberglove, calling the
+   * callback function each time the full message is received.
+   *
+   * @return 0 if success
+   */
+  int start_stream();
 
-    /**
-     * We keep the count of all the messages received for the glove.
-     *
-     * @return the number of received messages.
-     */
-    int get_nb_msgs_received();
+  /**
+   * We keep the count of all the messages received for the glove.
+   *
+   * @return the number of received messages.
+   */
+  int get_nb_msgs_received();
 
-    /**
-     * The number of sensors in the glove.
-     */
-    static const unsigned short glove_size;
+  /**
+   * The number of sensors in the glove.
+   */
+  static const unsigned short glove_size;
 
-    /**
-     * The length of the timestamp in the 16bit protocol.
-     */
-    static const unsigned short timestamp_size;
+  /**
+   * The length of the timestamp in the 16bit protocol.
+   */
+  static const unsigned short timestamp_size;
 
-  private:
-    /**
-     * CerealPort is the ROS library used to talk
-     * to the serial port.
-     */
-    boost::shared_ptr<cereal::CerealPort> cereal_port;
+private:
+  /**
+   * CerealPort is the ROS library used to talk
+   * to the serial port.
+   */
+  boost::shared_ptr<cereal::CerealPort> cereal_port;
 
-    /**
-     * The callback function for the raw data coming from the
-     * serial port, bound to the cereal_port callback. The data received
-     * here is not received message by messages: it's a stream of data, coming
-     * at different intervals (the whole messages are received at a given frequency
-     * though)
-     *
-     * @param world a table of char containing the binary values from the serial port
-     * @param length the length of the received message.
-     */
-    void stream_callback(char* world, int length);
+  /**
+   * The callback function for the raw data coming from the
+   * serial port, bound to the cereal_port callback. The data received
+   * here is not received message by messages: it's a stream of data, coming
+   * at different intervals (the whole messages are received at a given frequency
+   * though)
+   *
+   * @param world a table of char containing the binary values from the serial port
+   * @param length the length of the received message.
+   */
+  void stream_callback(char* world, int length);
 
-    int nb_msgs_received, glove_pos_index, timestamp_bytes_, byte_index_;
-    const unsigned short glove_size_;
-    /// A vector containing the current joints positions.
-    std::vector<float> glove_positions;
+  int nb_msgs_received, glove_pos_index, timestamp_bytes_, byte_index_;
+  const unsigned short glove_size_;
+  /// A vector containing the current joints positions.
+  std::vector<float> glove_positions;
 
-    unsigned int current_value;
-    unsigned int sensor_value_;
+  unsigned int current_value;
+  unsigned int sensor_value_;
 
-    /**
-     * The pointer to the function called each time a full message is received.
-     * This function is linked when instantiating the class.
-     */
-    boost::function<void(std::vector<float>, bool)> callback_function;
+  /**
+   * The pointer to the function called each time a full message is received.
+   * This function is linked when instantiating the class.
+   */
+  boost::function<void(std::vector<float>, bool)> callback_function;
 
-    bool light_on, button_on;
+  bool light_on, button_on;
 
-    ///Did we get any garbage in the received message?
-    bool no_errors;
+  ///Did we get any garbage in the received message?
+  bool no_errors;
 
-    std::string cyberglove_version_;
-    std::string streaming_protocol_;
+  std::string cyberglove_version_;
+  std::string streaming_protocol_;
 
-    unsigned int reception_state_;
-  };
-}
+  unsigned int reception_state_;
+};
+}  // namespace cyberglove
 
 /* For the emacs weenies in the crowd.
 Local Variables:
