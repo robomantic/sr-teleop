@@ -140,9 +140,15 @@ target_link_libraries(cyberglove_node
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
-install(TARGETS cyberglove
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+install(TARGETS cyberglove cyberglove_node
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
+
+install(DIRECTORY include/${PROJECT_NAME}/
+   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
+
 
 #############
 ## Testing ##
