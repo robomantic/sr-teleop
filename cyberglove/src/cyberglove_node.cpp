@@ -27,17 +27,16 @@
 
 #include <ros/ros.h>
 #include <time.h>
+#include <boost/smart_ptr.hpp>
+#include "cyberglove/Start.h"
 #include "cyberglove/cyberglove_publisher.h"
 #include "cyberglove/cyberglove_service.h"
-#include "cyberglove/Start.h"
-#include <boost/smart_ptr.hpp>
 
 using namespace cyberglove;
 
 /////////////////////////////////
 //           MAIN              //
 /////////////////////////////////
-
 
 /**
  *  Start the cyberglove publisher.
@@ -50,7 +49,7 @@ using namespace cyberglove;
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "cyberglove_publisher");
-  //NodeHandle n;
+  // NodeHandle n;
   try
   {
     boost::shared_ptr<CyberglovePublisher> cyberglove_pub(new CyberglovePublisher());
@@ -62,10 +61,9 @@ int main(int argc, char** argv)
     ROS_FATAL("could not create publisher, leaving");
     return -1;
   }
-  
+
   return 0;
 }
-
 
 /* For the emacs weenies in the crowd.
 Local Variables:

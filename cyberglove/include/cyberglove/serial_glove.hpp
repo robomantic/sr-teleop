@@ -67,8 +67,9 @@
 
 #include <cereal_port/CerealPort.h>
 #include <boost/smart_ptr.hpp>
-
 #include <boost/function.hpp>
+#include <string>
+#include <vector>
 
 namespace cyberglove_freq
 {
@@ -92,7 +93,6 @@ struct CybergloveFreq
 
 namespace cyberglove
 {
-
 enum reception_state
 {
   INITIAL,
@@ -124,7 +124,8 @@ public:
    * @param callback a pointer to a callback function, which will be called each time a
    *                 complete joint message is received.
    */
-  CybergloveSerial(std::string serial_port, std::string cyberglove_version, unsigned short glove_size, std::string streaming_protocol, boost::function<void(std::vector<float>, bool)> callback);
+  CybergloveSerial(std::string serial_port, std::string cyberglove_version, unsigned short glove_size,
+                   std::string streaming_protocol, boost::function<void(std::vector<float>, bool)> callback);
   ~CybergloveSerial();
 
   /**
@@ -218,7 +219,7 @@ private:
 
   bool light_on, button_on;
 
-  ///Did we get any garbage in the received message?
+  /// Did we get any garbage in the received message?
   bool no_errors;
 
   std::string cyberglove_version_;

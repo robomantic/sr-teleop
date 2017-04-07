@@ -35,27 +35,27 @@
  *
  */
 
+#ifndef XML_CALIBRATION_PARSER_H
+#define XML_CALIBRATION_PARSER_H
 
-#ifndef   	XML_CALIBRATION_PARSER_H_
-# define   	XML_CALIBRATION_PARSER_H_
-
-//xml parser library
+// xml parser library
 #include <tinyxml.h>
 
-//generic C/C++ include
+// generic C/C++ include
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 namespace xml_calibration_parser
 {
-
 class XmlCalibrationParser
 {
- public:
-  XmlCalibrationParser(){};
-  XmlCalibrationParser(std::string path_to_calibration);
-  ~XmlCalibrationParser(){};
+public:
+  XmlCalibrationParser()
+  {};
+  explicit XmlCalibrationParser(std::string path_to_calibration);
+  ~XmlCalibrationParser()
+  {};
 
   float get_calibration_value(float position, std::string joint_name);
 
@@ -71,12 +71,11 @@ class XmlCalibrationParser
     std::vector<Calibration> calibrations;
   };
 
-
   std::vector<JointCalibration> getJointsCalibrations();
 
- protected:
-  void parse_calibration_file( TiXmlNode* pParent );
-  std::vector<Calibration> parse_joint_attributes( TiXmlNode* pParent );
+protected:
+  void parse_calibration_file(TiXmlNode* pParent);
+  std::vector<Calibration> parse_joint_attributes(TiXmlNode* pParent);
 
   /// The vector containing the calibration
   std::vector<JointCalibration> jointsCalibrations;
@@ -90,9 +89,7 @@ class XmlCalibrationParser
 
   float compute_lookup_value(int index, std::vector<Calibration> calib);
 
-  float linear_interpolate( float x ,
-			    float x0, float y0,
-			    float x1, float y1 );
+  float linear_interpolate(float x, float x0, float y0, float x1, float y1);
 
   // consts for the lookup tables
   static const float lookup_precision;
@@ -127,10 +124,9 @@ class XmlCalibrationParser
    */
   static inline float return_raw_position_from_index(int lookup_index)
   {
-    return ((float)lookup_index)/lookup_precision;
+    return static_cast<float>(lookup_index) / lookup_precision;
   };
-
-}; // end class XmlCalibrationParser
+};  // end class XmlCalibrationParser
 
 }  // namespace xml_calibration_parser
-#endif 	    /* !XML_CALIBRATION_PARSER_H_ */
+#endif  // XML_CALIBRATION_PARSER_H

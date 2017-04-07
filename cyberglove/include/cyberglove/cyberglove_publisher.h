@@ -28,24 +28,22 @@
  *
  */
 
-#ifndef   	CYBERGLOVE_PUBLISHER_H_
-# define   	CYBERGLOVE_PUBLISHER_H_
+#ifndef CYBERGLOVE_PUBLISHER_H
+#define CYBERGLOVE_PUBLISHER_H
 
 #include <ros/ros.h>
-#include <vector>
 #include <boost/smart_ptr.hpp>
+#include <string>
+#include <vector>
 
 #include "cyberglove/serial_glove.hpp"
 
-//messages
+// messages
 #include <sensor_msgs/JointState.h>
 #include "cyberglove/xml_calibration_parser.h"
 
-using namespace ros;
-
 namespace cyberglove
 {
-
 class CyberglovePublisher
 {
 public:
@@ -55,20 +53,21 @@ public:
   /// Destructor
   ~CyberglovePublisher();
 
-  Publisher cyberglove_pub;
+  ros::Publisher cyberglove_pub;
   void initialize_calibration(std::string path_to_calibration);
   bool isPublishing();
   void setPublishing(bool value);
+
 private:
   /////////////////
   //  CALLBACKS  //
   /////////////////
 
-  //ros node handle
-  NodeHandle node, n_tilde;
+  // ros node handle
+  ros::NodeHandle node, n_tilde;
   unsigned int publish_counter_max, publish_counter_index;
 
-  ///the actual connection with the cyberglove is done here.
+  /// the actual connection with the cyberglove is done here.
   boost::shared_ptr<CybergloveSerial> serial_glove;
 
   /**
@@ -84,10 +83,10 @@ private:
   std::string path_to_glove;
   bool publishing;
 
-  ///the calibration parser
+  /// the calibration parser
   xml_calibration_parser::XmlCalibrationParser calibration_parser;
 
-  Publisher cyberglove_raw_pub;
+  ros::Publisher cyberglove_raw_pub;
 
   sensor_msgs::JointState jointstate_msg;
   sensor_msgs::JointState jointstate_raw_msg;
@@ -101,10 +100,10 @@ private:
   std::string cyberglove_version_;
   int cyberglove_joint_number_;
   std::string streaming_protocol_;
-}; // end class CyberglovePublisher
+};  // end class CyberglovePublisher
 
 }  // namespace cyberglove
-#endif 	    /* !CYBERGLOVE_PUBLISHER_H_ */
+#endif  // CYBERGLOVE_PUBLISHER_H
 
 /* For the emacs weenies in the crowd.
 Local Variables:

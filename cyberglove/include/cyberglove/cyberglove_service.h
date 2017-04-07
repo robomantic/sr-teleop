@@ -24,40 +24,37 @@
  *
  */
 
-
-#ifndef   	CYBERGLOVE_SERVICE_H_
-# define   	CYBERGLOVE_SERVICE_H_
+#ifndef CYBERGLOVE_SERVICE_H
+#define CYBERGLOVE_SERVICE_H
 
 #include <ros/ros.h>
-#include <vector>
-#include "cyberglove_publisher.h"
-#include "cyberglove/Start.h"
-#include "cyberglove/Calibration.h"
 #include <boost/smart_ptr.hpp>
+#include <vector>
+#include "cyberglove/Calibration.h"
+#include "cyberglove/Start.h"
+#include "cyberglove/cyberglove_publisher.h"
 
-//messages
-
-using namespace ros;
+// messages
 
 namespace cyberglove
 {
-
 class CybergloveService
 {
 public:
   /// Constructor
-  CybergloveService(boost::shared_ptr<CyberglovePublisher> publish);
-  ~CybergloveService(){};
+  explicit CybergloveService(boost::shared_ptr<CyberglovePublisher> publish);
+  ~CybergloveService()
+  {};
 
-  //CybergloveService();
+  // CybergloveService();
   bool start(cyberglove::Start::Request &req, cyberglove::Start::Response &res);
   bool calibration(cyberglove::Calibration::Request &req, cyberglove::Calibration::Response &res);
-private:
 
-  NodeHandle node;
+private:
+  ros::NodeHandle node;
   boost::shared_ptr<CyberglovePublisher> pub;
   ros::ServiceServer service_start;
   ros::ServiceServer service_calibration;
 };
 }  // namespace cyberglove
-#endif
+#endif  // CYBERGLOVE_SERVICE_H
