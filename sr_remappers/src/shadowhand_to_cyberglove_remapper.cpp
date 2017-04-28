@@ -36,6 +36,8 @@
 #include "sr_remappers/shadowhand_to_cyberglove_remapper.h"
 #include <sr_robot_msgs/sendupdate.h>
 #include <sr_robot_msgs/joint.h>
+#include <sensor_msgs/JointState.h>
+
 using namespace ros;
 
 namespace shadowhand_to_cyberglove_remapper
@@ -62,6 +64,7 @@ ShadowhandToCybergloveRemapper::ShadowhandToCybergloveRemapper() :
     n_tilde.param(searched_param, prefix, std::string());
 
     std::string full_topic = prefix + "/calibrated/joint_states";
+    std::string remapped_full_topic = prefix + "/remapped/joint_states";
 
     cyberglove_jointstates_sub = node.subscribe(full_topic, 10, &ShadowhandToCybergloveRemapper::jointstatesCallback, this);
 
@@ -70,6 +73,7 @@ ShadowhandToCybergloveRemapper::ShadowhandToCybergloveRemapper() :
     full_topic = prefix + "sendupdate";
 
     shadowhand_pub = node.advertise<sr_robot_msgs::sendupdate> (full_topic, 5);
+    js_pub = node.advertise<sensor_msgs::JointState> (remapped_full_topic, 5);
 }
 
 void ShadowhandToCybergloveRemapper::init_names()
@@ -94,6 +98,9 @@ void ShadowhandToCybergloveRemapper::init_names()
     joints_names[17] = "LFJ5";
     joints_names[18] = "WRJ1";
     joints_names[19] = "WRJ2";
+
+    js_msg.name = joints_names;
+    js_msg.position.resize(number_hand_joints);
 }
 
 void ShadowhandToCybergloveRemapper::jointstatesCallback( const sensor_msgs::JointStateConstPtr& msg )
@@ -116,10 +123,16 @@ void ShadowhandToCybergloveRemapper::jointstatesCallback( const sensor_msgs::Joi
         joint.joint_name = joints_names[i];
         joint.joint_target = vect[i];
         table[i] = joint;
+        js_msg.position[i] = vect[i] / 180.0 * M_PI; //radians in joint_states
     }
     pub.sendupdate_length = number_hand_joints;
     pub.sendupdate_list = table;
+    
+    //Generate sendupdate message
+    js_msg.header.stamp = ros::Time::now();
+    
     shadowhand_pub.publish(pub);
+    js_pub.publish(js_msg);
 }
 
 void ShadowhandToCybergloveRemapper::getAbductionJoints( const sensor_msgs::JointStateConstPtr& msg, std::vector<double>& vect)

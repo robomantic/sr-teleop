@@ -56,6 +56,8 @@ class ShadowhandToCybergloveRemapper
    */
   static const unsigned int number_hand_joints;
 
+  sensor_msgs::JointState js_msg;
+
   /**
    * Init the vector containing the joints names
    *
@@ -69,6 +71,8 @@ class ShadowhandToCybergloveRemapper
   Subscriber cyberglove_jointstates_sub;
   ///publish to the shadowhand sendupdate topic
   Publisher shadowhand_pub;
+  ///publish to the shadowhand joint_states topic
+  Publisher js_pub;
   ///the calibration parser containing the mapping matrix
   CalibrationParser* calibration_parser;
 
