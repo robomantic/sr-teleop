@@ -84,7 +84,9 @@ private:
     std::istringstream i(s);
     double x;
     if (!(i >> x))
-      ROS_ERROR("Bad calibration file: %s", s.c_str());
+    {
+      throw std::runtime_error("parsing to double failed");
+    } 
     return x;
   }
 }; // end class

@@ -39,12 +39,17 @@ const std::string CalibrationParser::default_path = "/etc/robot/mappings/default
 CalibrationParser::CalibrationParser()
 {
     ROS_WARN("No calibration path was specified, using default path");
-    init(default_path);
+    int ret = init(default_path);
+    if (ret != 0)
+      throw std::runtime_error("calibration parser initialization failed");
 }
 
 CalibrationParser::CalibrationParser( std::string path )
 {
     init(path);
+    int ret = init(path);
+    if (ret != 0)
+      throw std::runtime_error("calibration parser initialization failed");
 }
 
 int CalibrationParser::init( std::string path )
@@ -66,9 +71,13 @@ int CalibrationParser::init( std::string path )
     std::vector<std::vector<double> > tmp_matrix;
 
     string line;
+    int cur_line = 0;
+    std::vector<double> double_line;//(splitted_string.size());
+    int previous_line_size = -1;
     while( !calibration_file.eof() )
     {
         getline(calibration_file, line);
+        ++cur_line;
 
         //remove leading and trailing whitespaces
         line = boost::algorithm::trim_copy(line);
@@ -83,11 +92,28 @@ int CalibrationParser::init( std::string path )
 
         std::vector<std::string> splitted_string;
         boost::split(splitted_string, line, boost::is_any_of("\t "));
-
-        std::vector<double> double_line(splitted_string.size());
-        for( unsigned int index_col = 0; index_col < splitted_string.size(); ++index_col )
-            double_line[index_col] = convertToDouble(splitted_string[index_col]);
-
+        
+        double_line.clear();
+        for( unsigned int index_col = 0; index_col < splitted_string.size(); ++index_col)
+        {
+            try{
+              double val = convertToDouble(splitted_string[index_col]);
+              double_line.push_back(val);
+            }
+            catch (const std::runtime_error& e){
+               ROS_DEBUG("skipping non-double value (%s) in line ", splitted_string[index_col].c_str());
+            }
+        }
+        if (previous_line_size > -1)
+        {
+          if (previous_line_size != double_line.size())
+          {
+            ROS_ERROR("inconstent number of values between line %d (%d values) and %d (%lud values). Check the mapping",
+                      cur_line-1, previous_line_size, cur_line, double_line.size());
+            return -1;
+          }
+        }
+        previous_line_size = double_line.size();
         calibration_matrix.push_back(double_line);
     }
     calibration_file.close();
@@ -102,7 +128,9 @@ int CalibrationParser::init( std::string path )
         }
         ss << endl;
     }
-
+    if (calibration_matrix.size()>0)
+      ROS_INFO_STREAM("loaded a mapping matrix for " << calibration_matrix[0].size() << 
+                      " input joints to " << calibration_matrix.size() <<  " output joints" );
     ROS_DEBUG("%s",ss.str().c_str());
     return 0;
 }
