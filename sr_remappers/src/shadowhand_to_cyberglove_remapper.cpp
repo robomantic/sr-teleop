@@ -57,7 +57,13 @@ ShadowhandToCybergloveRemapper::ShadowhandToCybergloveRemapper() :
     n_tilde.param(param, path, std::string());
     bool transposed;
     n_tilde.param<bool>("transposed", transposed, true);
-    calibration_parser = new CalibrationParser(path);
+    try{
+      calibration_parser = new CalibrationParser(path, false);
+    }
+    catch (const std::runtime_error& e){
+      ROS_ERROR("Failed to instantiated calibration parser (%s) ", e.what());
+      exit(-1);
+    }
     ROS_INFO("Mapping file loaded for the Cyberglove: %s", path.c_str());
 
     std::string prefix;
