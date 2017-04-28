@@ -147,6 +147,8 @@ install(TARGETS ${PROJECT_NAME} cyberglove_remapper cyberglove_human_remapper
 )
 
 install(FILES include/${PROJECT_NAME}/calibration_parser.h
-   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/
 )
 
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
