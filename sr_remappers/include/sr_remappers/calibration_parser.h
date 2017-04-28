@@ -43,17 +43,19 @@ public:
   /**
   * Default constructor, using the default path. Initialize a
   * calibration matrix loaded from the default calibration file.
+  * transposed is default to keep backward compatibility even if not natural
   *
   */
-  CalibrationParser();
+  CalibrationParser(bool transpose=true);
 
   /**
   * Constructor initializing a calibration matrix loaded from the
   * given calibration file.
+  * transposed is default to keep backward compatibility even if not natural
   *
   * @param path the path to the calibration file
   */
-  CalibrationParser(std::string path);
+  CalibrationParser(std::string path, bool transpose=true);
   ~CalibrationParser(){};
 
   /**
@@ -66,6 +68,7 @@ public:
   std::vector<double> get_remapped_vector(std::vector<double>);
 
 private:
+  bool transpose_;
   static const std::string default_path;
 
   /**

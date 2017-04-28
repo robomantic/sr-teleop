@@ -36,17 +36,20 @@ using namespace std;
 
 const std::string CalibrationParser::default_path = "/etc/robot/mappings/default_mapping";
 
-CalibrationParser::CalibrationParser()
+CalibrationParser::CalibrationParser(bool transpose) : transpose_(transpose)
 {
+    if (transpose_)
+      ROS_INFO("Using transposed version of the mapping");
     ROS_WARN("No calibration path was specified, using default path");
     int ret = init(default_path);
     if (ret != 0)
       throw std::runtime_error("calibration parser initialization failed");
 }
 
-CalibrationParser::CalibrationParser( std::string path )
+CalibrationParser::CalibrationParser(std::string path, bool transpose) : transpose_(transpose)
 {
-    init(path);
+    if (transpose_)
+      ROS_INFO("Using transposed version of the mapping");
     int ret = init(path);
     if (ret != 0)
       throw std::runtime_error("calibration parser initialization failed");
@@ -135,29 +138,58 @@ int CalibrationParser::init( std::string path )
     return 0;
 }
 
-std::vector<double> CalibrationParser::get_remapped_vector( std::vector<double> input_vector )
+std::vector<double> CalibrationParser::get_remapped_vector( std::vector<double> input_vector)
 {
-    //check the size of the matrix
-    if( input_vector.size() != calibration_matrix.size() )
-    {
-      ROS_ERROR_STREAM("The size of the given vector doesn't correspond to the mapping: received "
-                       << input_vector.size()
-                       << ", wanted "
-                       << calibration_matrix.size());
-        return std::vector<double>(calibration_matrix[0].size());
-    }
-
-    std::vector<double> result(calibration_matrix[0].size());
+    std::vector<double> result;
     double tmp_value;
-
-    for( unsigned int col = 0; col < calibration_matrix[0].size(); ++col )
+    if (transpose_) // columns-major multiplication
     {
-        tmp_value = 0.0;
-        for( unsigned int index_vec = 0; index_vec < calibration_matrix.size(); ++index_vec )
+      //check the size of the matrix
+      if( input_vector.size() != calibration_matrix.size() )
+      {
+        ROS_ERROR_STREAM_THROTTLE(1.0, "The size of the given vector doesn't correspond to the mapping: received "
+                         << input_vector.size()
+                         << ", wanted "
+                         << calibration_matrix.size());
+          return std::vector<double>(calibration_matrix[0].size());
+      }
+      result.resize(calibration_matrix[0].size());
+
+      for( unsigned int col = 0; col < calibration_matrix[0].size(); ++col )
+      {
+          tmp_value = 0.0;
+          for( unsigned int index_vec = 0; index_vec < calibration_matrix.size(); ++index_vec )
+          {
+              tmp_value += (input_vector[index_vec] * calibration_matrix[index_vec][col]);
+          }
+          result[col] = tmp_value;
+      }
+    }
+    else // row-major multiplication (standard matrix multiplication)
+    {
+      if( calibration_matrix.size() > 0)
+      {
+        //check the size of the matrix
+        if( input_vector.size() != calibration_matrix[0].size() )
         {
-            tmp_value += (input_vector[index_vec] * calibration_matrix[index_vec][col]);
+          ROS_ERROR_STREAM_THROTTLE(1.0, "The size of the given vector doesn't correspond to the mapping: received "
+                           << input_vector.size()
+                           << ", wanted "
+                           << calibration_matrix[0].size());
+            return std::vector<double>(calibration_matrix.size());
         }
-        result[col] = tmp_value;
+        result.resize(calibration_matrix.size());
+
+        for( unsigned int line = 0; line < calibration_matrix.size(); ++line )
+        {
+            tmp_value = 0.0;
+            for( unsigned int index_vec = 0; index_vec < calibration_matrix[0].size(); ++index_vec )
+            {
+                tmp_value += (input_vector[index_vec] * calibration_matrix[line][index_vec]);
+            }
+            result[line] = tmp_value;
+        }
+      }
     }
 
     return result;

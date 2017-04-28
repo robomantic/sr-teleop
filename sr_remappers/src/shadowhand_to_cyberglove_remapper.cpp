@@ -55,6 +55,8 @@ ShadowhandToCybergloveRemapper::ShadowhandToCybergloveRemapper() :
     std::string path;
     n_tilde.searchParam("cyberglove_mapping_path", param);
     n_tilde.param(param, path, std::string());
+    bool transposed;
+    n_tilde.param<bool>("transposed", transposed, true);
     calibration_parser = new CalibrationParser(path);
     ROS_INFO("Mapping file loaded for the Cyberglove: %s", path.c_str());
 
