@@ -1,0 +1,16 @@
+<launch>
+  <arg name="mapping" default="$(find sr_cyberglove_config)/mappings/GloveToHandMappings_generic"/>
+  <arg name="transposed" default="true"/>
+  <arg name="output_js" default="/cyberglove/remapped/joint_states"/>
+
+  <!-- shadowhand to cybergrasp remapper -->
+  <node pkg="sr_remappers" name="cyberglove_human_remapper"
+	type="cyberglove_human_remapper" output="screen">
+    <param name="cyberglove_prefix" type="string"
+    value="/cyberglove/" />
+    <param name="cyberglove_mapping_path" type="string" value="$(arg mapping)" />
+    <param name="transposed" type="bool" value="$(arg transposed)" />
+    <remap from="/cyberglove/remapped/joint_states" to="$(arg output_js)" />
+  </node>
+</launch>
+

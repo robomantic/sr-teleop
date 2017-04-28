@@ -117,13 +117,31 @@ target_link_libraries(cyberglove_remapper
   ${Boost_LIBRARIES}
 )
 
+## Declare a cpp executable
+add_executable(cyberglove_human_remapper
+  src/humanhand_to_cyberglove_remapper.cpp
+  src/humanhand_to_cyberglove_remapper_node.cpp
+  src/calibration_parser.cpp
+)
+
+## Add cmake target dependencies of the executable/library
+## as an example, message headers may need to be generated before nodes
+add_dependencies(cyberglove_human_remapper
+  ${catkin_EXPORTED_TARGETS}
+)
+
+## Specify libraries to link a library or executable target against
+target_link_libraries(cyberglove_human_remapper
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
 #############
 ## Install ##
 #############
 
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
-install(TARGETS ${PROJECT_NAME} cyberglove_remapper
+install(TARGETS ${PROJECT_NAME} cyberglove_remapper cyberglove_human_remapper
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
