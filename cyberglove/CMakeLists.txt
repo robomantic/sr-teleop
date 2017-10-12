@@ -133,6 +133,27 @@ target_link_libraries(cyberglove_node
   tinyxml
 )
 
+## Declare a cpp executable
+add_executable(cyberglove_recalib_node
+  src/cyberglove_calib_publisher.cpp
+  src/cyberglove_recalib_node.cpp
+  src/xml_calibration_parser.cpp
+)
+
+## Add cmake target dependencies of the executable/library
+## as an example, message headers may need to be generated before nodes
+add_dependencies(cyberglove_recalib_node
+  ${catkin_EXPORTED_TARGETS}
+  ${PROJECT_NAME}_generate_messages_cpp
+)
+
+## Specify libraries to link a library or executable target against
+target_link_libraries(cyberglove_recalib_node
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+  tinyxml
+)
+
 #############
 ## Install ##
 #############
@@ -140,7 +161,7 @@ target_link_libraries(cyberglove_node
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
-install(TARGETS cyberglove cyberglove_node
+install(TARGETS cyberglove cyberglove_node cyberglove_recalib_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
