@@ -1,0 +1,172 @@
+<robot name="cyberglove">
+  <link name="cyberglove_forearm"></link>
+ 
+  <!-- FIRST FINGER-->
+
+  
+  <link name="ffproximal"></link>
+  <link name="ffmiddle"></link>
+  <link name="ffmfknuckle"></link>
+  <link name="mfproximal"></link>
+  <link name="mfmiddle"></link>
+  <link name="mfrfknuckle"></link>
+  <link name="rfproximal"></link>
+  <link name="rfmiddle"></link>
+  <link name="lfknuckle"></link>
+  <link name="lfproximal"></link>
+  <link name="lfmiddle"></link>
+  <link name="lfmetacarpal"></link>
+  <link name="thbase"></link>
+  <link name="thproximal"></link>
+  <link name="thmiddle"></link>
+  <link name="thdistal"></link>
+  <link name="wrist"></link>
+  <link name="palm"></link>
+
+<!--
+ <joint name="attachment" type="continuous">
+   <parent link="world"/>
+   <child link="cyberglove_forearm"/>
+   <origin xyz="5 0 0" rpy="0 0 3.14" />
+   <axis xyz="0 1 0" />
+ </joint>
+ -->
+ 
+  <joint name="G_ThumbRotate" type="revolute">
+    <parent link="thbase"/>
+    <child link="thproximal"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+
+  <joint name="G_ThumbMPJ" type="revolute">
+    <parent link="thproximal"/>
+    <child link="thmiddle"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+  <joint name="G_ThumbIJ" type="revolute">
+    <parent link="thmiddle"/>
+    <child link="thdistal"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+  <joint name="G_ThumbAb" type="revolute">
+    <parent link="palm"/>
+    <child link="thbase"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+  
+  <joint name="G_IndexMPJ" type="revolute">
+    <parent link="ffmfknuckle"/>
+    <child link="ffproximal"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+  <joint name="G_IndexPIJ" type="revolute">
+    <parent link="ffproximal"/>
+    <child link="ffmiddle"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint> 
+ 
+ 
+  <joint name="G_MiddleMPJ" type="revolute">
+    <parent link="ffmfknuckle"/>
+    <child link="mfproximal"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+  
+  <joint name="G_MiddlePIJ" type="revolute">
+    <parent link="mfproximal"/>
+    <child link="mfmiddle"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+  
+  <joint name="G_MiddleIndexAb" type="revolute">
+    <parent link="palm"/>
+    <child link="ffmfknuckle"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+  
+
+    
+<joint name="G_RingMPJ" type="revolute">
+    <parent link="mfrfknuckle"/>
+    <child link="rfproximal"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+ 
+  <joint name="G_RingPIJ" type="revolute">
+    <parent link="rfproximal"/>
+    <child link="rfmiddle"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+  
+   <joint name="G_RingMiddleAb" type="revolute">
+    <parent link="palm"/>
+    <child link="mfrfknuckle"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+
+  
+  <joint name="G_PinkieMPJ" type="revolute">
+    <parent link="lfknuckle"/>
+    <child link="lfproximal"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+  
+   <joint name="G_PinkiePIJ" type="revolute">
+    <parent link="lfproximal"/>
+    <child link="lfmiddle"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+  
+    <joint name="G_PinkieRingAb" type="revolute">
+    <parent link="lfmetacarpal"/>
+    <child link="lfknuckle"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+  
+   <joint name="G_PalmArch" type="revolute">
+    <parent link="palm"/>
+    <child link="lfmetacarpal"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+    <joint name="G_WristPitch" type="revolute">
+    <parent link="wrist"/>
+    <child link="palm"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+
+  <joint name="G_WristYaw" type="revolute">
+    <parent link="cyberglove_forearm"/>
+    <child link="wrist"/>   
+    <limit lower="0" upper="1.0"
+    effort="10" velocity="1.0"/>
+  </joint>
+
+
+
+  
+
+
+  
+
+
+ 
+</robot>
+
+

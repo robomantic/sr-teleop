@@ -7,7 +7,7 @@
   <!-- Activate internal cybeglove data filtering -->
   <arg name="filter" default="true"/>
 
-  <param name="robot_description" textfile="$(find
+  <param name="glove_description" textfile="$(find
   cyberglove)/model/cyberglove.xml"/>
 
   <node pkg="cyberglove" name="cyberglove" type="cyberglove_node" output="screen" >
