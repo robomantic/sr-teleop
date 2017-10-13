@@ -1,6 +1,7 @@
 <launch>
   <arg name="mapping" default="$(find sr_cyberglove_config)/mappings/GloveToHandMappings_generic"/>
   <arg name="transposed" default="true"/>
+  <arg name="legacy_abduction" default="false"/>
   <arg name="abduction_max" default="25.0"/>
   <arg name="output_js" default="/cyberglove/remapped/joint_states"/>
 
@@ -12,6 +13,7 @@
     <param name="cyberglove_mapping_path" type="string" value="$(arg mapping)" />
     <param name="transposed" type="bool" value="$(arg transposed)" />
     <param name="abduction_max" type="double" value="$(arg abduction_max)" />
+    <param name="legacy_abduction" type="bool" value="$(arg legacy_abduction)" />
     <remap from="/cyberglove/remapped/joint_states" to="$(arg output_js)" />
   </node>
 </launch>

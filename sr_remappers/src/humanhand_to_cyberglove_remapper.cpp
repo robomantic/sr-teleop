@@ -56,6 +56,8 @@ HumanhandToCybergloveRemapper::HumanhandToCybergloveRemapper() :
     n_tilde.param(param, path, std::string());
     n_tilde.searchParam("abduction_max", param);
     n_tilde.param(param, abduction_max, 25.0);
+    n_tilde.searchParam("legacy_abduction", param);
+    n_tilde.param(param, legacy_abduction, false);
     bool transposed;
     n_tilde.param<bool>("transposed", transposed, true);
     try{
@@ -139,41 +141,90 @@ void HumanhandToCybergloveRemapper::getAbductionJoints( const sensor_msgs::Joint
   if (pinkieRingAb < 0.0)
     pinkieRingAb = 0.0;
 
-  //Add the 3 abduction angles to have an idea of where the centre lies
-  double ab_total = middleIndexAb + ringMiddleAb +  pinkieRingAb;
-  // code has flipped signed compared to shadow version because human hand has not different on J4's
-  if (ab_total/2 < middleIndexAb) // If the centre lies between ff and mf
+  if (legacy_abduction)
   {
-    //index_abduction_joint
-    vect[7] = std::max(-abduction_max, std::min(abduction_max , -ab_total/2.0));
-    //middle_abduction_joint
-    vect[11] = std::max(-abduction_max, std::min(middleIndexAb - ab_total/2.0, abduction_max));
-    //ring_abduction_joint
-    vect[15] = std::max(-abduction_max, std::min(ringMiddleAb + vect[11], abduction_max));
-    //little_abduction_joint
-    vect[19] = std::max(-abduction_max, std::min(pinkieRingAb + vect[15], abduction_max));
+    //Add the 3 abduction angles to have an idea of where the centre lies
+    double ab_total = middleIndexAb + ringMiddleAb +  pinkieRingAb;
+    // code has flipped signed compared to shadow version because human hand has not different on J4's
+    if (ab_total/2 < middleIndexAb) // If the centre lies between ff and mf
+    {
+      //index_abduction_joint
+      vect[7] = std::max(-abduction_max, std::min(abduction_max , -ab_total/2.0));
+      //middle_abduction_joint
+      vect[11] = std::max(-abduction_max, std::min(middleIndexAb - ab_total/2.0, abduction_max));
+      //ring_abduction_joint
+      vect[15] = std::max(-abduction_max, std::min(ringMiddleAb + vect[11], abduction_max));
+      //little_abduction_joint
+      vect[19] = std::max(-abduction_max, std::min(pinkieRingAb + vect[15], abduction_max));
+    }
+    else if (ab_total/2 < middleIndexAb + ringMiddleAb) // If the centre lies between mf and rf
+    {
+      //middle_abduction_joint
+      vect[11] = std::max(-abduction_max, std::min(-(ab_total/2.0 - middleIndexAb), abduction_max));
+      //index_abduction_joint
+      vect[7] = std::max(-abduction_max, std::min(-middleIndexAb + vect[11], abduction_max));
+      //ring_abduction_joint
+      vect[15] = std::max(-abduction_max, std::min((ringMiddleAb + vect[11]), abduction_max));
+      //little_abduction_joint
+      vect[19] = std::max(-abduction_max, std::min(pinkieRingAb + vect[15], abduction_max));
+    }
+    else // If the centre lies between rf and lf
+    {
+      //little_abduction_joint
+      vect[19] = std::max(-abduction_max, std::min(ab_total/2.0, abduction_max));
+      //ring_abduction_joint
+      vect[15] = std::max(-abduction_max, std::min(-pinkieRingAb + vect[19], abduction_max));
+      //middle_abduction_joint
+      vect[11] =  std::max(-abduction_max ,std::min(-ringMiddleAb + vect[15], abduction_max));
+      //index_abduction_joint
+      vect[7] =  std::max(-abduction_max, std::min(-middleIndexAb + vect[11], abduction_max));
+    }
   }
-  else if (ab_total/2 < middleIndexAb + ringMiddleAb) // If the centre lies between mf and rf
+  else
   {
-    //middle_abduction_joint
-    vect[11] = std::max(-abduction_max, std::min(-(ab_total/2.0 - middleIndexAb), abduction_max));
-    //index_abduction_joint
-    vect[7] = std::max(-abduction_max, std::min(-middleIndexAb + vect[11], abduction_max));
-    //ring_abduction_joint
-    vect[15] = std::max(-abduction_max, std::min((ringMiddleAb + vect[11]), abduction_max));
-    //little_abduction_joint
-    vect[19] = std::max(-abduction_max, std::min(pinkieRingAb + vect[15], abduction_max));
+    // if there is space left on the index side and pinkie side)
+    if (ringMiddleAb/2 + middleIndexAb <= abduction_max && ringMiddleAb/2 + pinkieRingAb <= abduction_max)
+    {
+      //move little_abduction_joint further
+      vect[7] = -middleIndexAb-(ringMiddleAb/2);
+      //middle_abduction_joint
+      vect[11] = -(ringMiddleAb/2);
+      //ring_abduction_joint
+      vect[15] = (ringMiddleAb/2);
+     //little_abduction_joint
+      vect[19] = pinkieRingAb+(ringMiddleAb/2);
+    }
+    else // look which side has the most space and go to saturation on the other one first
+    {
+      if (middleIndexAb > pinkieRingAb) // saturate index first
+      {
+        //saturate index_abduction_joint to min
+        vect[7] = -abduction_max ;
+        // then move the other extremity to its max if needed
+        //little_abduction_joint 
+        vect[19] = std::min(abduction_max, (middleIndexAb-abduction_max) + ringMiddleAb + pinkieRingAb);
+        // average between what middleIndexAb wants and what pinkieRingAb+ringMiddleAb wants
+        //ring_abduction_joint
+        vect[15] = std::min(vect[19], ((vect[7] + middleIndexAb+ringMiddleAb) + (vect[19] - pinkieRingAb))/2.0);
+        //middle_abduction_joint
+        vect[11] = std::min(vect[19], ((vect[7] + middleIndexAb) + (vect[19] - pinkieRingAb-ringMiddleAb))/2.0);
+        
+      }
+      else // saturate pinky first
+      {
+        //saturate little_abduction_joint to max + some extra
+        vect[19] = abduction_max;
+        // then move the other extremity to its max if needed
+        //index_abduction_joint
+        vect[7] = std::max(-abduction_max, -(pinkieRingAb-abduction_max) - ringMiddleAb - middleIndexAb);
+        //middle_abduction_joint to satisfy at best the sensors otherwise distributed
+        vect[11] = std::max(vect[7], ((vect[19] - pinkieRingAb-ringMiddleAb) + (vect[7] + middleIndexAb))/2.0);
+        //ring_abduction_joint
+        vect[15] = std::max(vect[7], ((vect[19] - pinkieRingAb) + (vect[7] + middleIndexAb+ringMiddleAb))/2.0);
+        
+      }
+    }
   }
-  else // If the centre lies between rf and lf
-  {
-    //little_abduction_joint
-    vect[19] = std::max(-abduction_max, std::min(ab_total/2.0, abduction_max));
-    //ring_abduction_joint
-    vect[15] = std::max(-abduction_max, std::min(-pinkieRingAb + vect[19], abduction_max));
-    //middle_abduction_joint
-    vect[11] =  std::max(-abduction_max ,std::min(-ringMiddleAb + vect[15], abduction_max));
-    //index_abduction_joint
-    vect[7] =  std::max(-abduction_max, std::min(-middleIndexAb + vect[11], abduction_max));
-  }
+
 }
 }//end namespace
