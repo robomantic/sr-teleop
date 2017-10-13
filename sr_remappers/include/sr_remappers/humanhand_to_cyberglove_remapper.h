@@ -65,6 +65,8 @@ class HumanhandToCybergloveRemapper
   void init_names();
   /// ROS node handles
   NodeHandle node, n_tilde;
+  /// in order to limit or not the abduction
+  double abduction_max;
   /// Vector containing all the joints names for the shadowhand.
   std::vector<std::string> joints_names;
   /// subscriber to the jointstates topic from the cyberglove
