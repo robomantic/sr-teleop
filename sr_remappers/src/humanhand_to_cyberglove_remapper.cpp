@@ -144,35 +144,35 @@ void HumanhandToCybergloveRemapper::getAbductionJoints( const sensor_msgs::Joint
   if (ab_total/2 < middleIndexAb) // If the centre lies between ff and mf
   {
     //index_abduction_joint
-    vect[7] = -ab_total/2;
+    vect[7] = std::max(-25.0, std::min(25.0 , -ab_total/2.0));
     //middle_abduction_joint
-    vect[11] = middleIndexAb - ab_total/2;
+    vect[11] = std::max(-25.0, std::min(middleIndexAb - ab_total/2.0, 25.0));
     //ring_abduction_joint
-    vect[15] = (ringMiddleAb + vect[11]);
+    vect[15] = std::max(-25.0, std::min(ringMiddleAb + vect[11], 25.0));
     //little_abduction_joint
-    vect[19] = pinkieRingAb - vect[15];
+    vect[19] = std::max(-25.0, std::min(pinkieRingAb + vect[15], 25.0));
   }
   else if (ab_total/2 < middleIndexAb + ringMiddleAb) // If the centre lies between mf and rf
   {
     //middle_abduction_joint
-    vect[11] = -(ab_total/2 - middleIndexAb);
+    vect[11] = std::max(-25.0, std::min(-(ab_total/2.0 - middleIndexAb), 25.0));
     //index_abduction_joint
-    vect[7] = -middleIndexAb + vect[11];
+    vect[7] = std::max(-25.0, std::min(-middleIndexAb + vect[11], 25.0));
     //ring_abduction_joint
-    vect[15] = (ringMiddleAb + vect[11]);
+    vect[15] = std::max(-25.0, std::min((ringMiddleAb + vect[11]), 25.0));
     //little_abduction_joint
-    vect[19] = pinkieRingAb - vect[15];
+    vect[19] = std::max(-25.0, std::min(pinkieRingAb + vect[15], 25.0));
   }
   else // If the centre lies between rf and lf
   {
     //little_abduction_joint
-    vect[19] = ab_total/2;
+    vect[19] = std::max(-25.0, std::min(ab_total/2.0, 25.0));
     //ring_abduction_joint
-    vect[15] = -pinkieRingAb - vect[19];
+    vect[15] = std::max(-25.0, std::min(-pinkieRingAb + vect[19], 25.0));
     //middle_abduction_joint
-    vect[11] = -(ringMiddleAb + vect[15]);
+    vect[11] =  std::max(-25.0 ,std::min(-ringMiddleAb + vect[15], 25.0));
     //index_abduction_joint
-    vect[7] = -middleIndexAb + vect[11];
+    vect[7] =  std::max(-25.0, std::min(-middleIndexAb + vect[11], 25.0));
   }
 }
 }//end namespace
