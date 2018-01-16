@@ -18,7 +18,6 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>diagnostic_msgs</build_depend>
   <build_depend>genmsg</build_depend>
-  <build_depend>sr_cyberglove_config</build_depend>
   <build_depend>cereal_port</build_depend>
   <build_depend>rostest</build_depend>
   <build_depend>message_generation</build_depend>

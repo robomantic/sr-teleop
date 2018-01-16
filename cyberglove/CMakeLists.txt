@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   diagnostic_msgs
   genmsg
-  sr_cyberglove_config
   cereal_port
   message_generation
 )
