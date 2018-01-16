@@ -10,7 +10,6 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   sr_robot_msgs
-  sr_cyberglove_config
 )
 
 ## System dependencies are found with CMake's conventions
