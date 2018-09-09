@@ -208,7 +208,7 @@ int XmlCalibrationParser::build_calibration_table()
     joints_calibrations_map[name] = lookup_table;
     // joints_calibrations_map.insert(std::pair <std::string, std::vector<float> >(name, lookup_table));
   }
-  ROS_DEBUG_STREAM(ss);
+  ROS_DEBUG_STREAM(ss.str());
   return 0;
 }
 
