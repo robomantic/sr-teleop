@@ -10,15 +10,13 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   sr_robot_msgs
+  trajectory_msgs
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED system filesystem date_time thread)
 
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -63,7 +61,7 @@ find_package(Boost REQUIRED system filesystem date_time thread)
 catkin_package(
 INCLUDE_DIRS include
 LIBRARIES sr_remappers
-CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs sr_robot_msgs sr_cyberglove_config
+CATKIN_DEPENDS roscpp rospy std_msgs sensor_msgs sr_robot_msgs trajectory_msgs sr_cyberglove_config
 #  DEPENDS system_lib
 )
 
@@ -151,3 +149,6 @@ install(FILES include/${PROJECT_NAME}/calibration_parser.h
 
 install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
+  
+catkin_install_python(PROGRAMS scripts/js_to_jtp.py
+                      DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

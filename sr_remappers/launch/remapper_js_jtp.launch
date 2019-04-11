@@ -1,0 +1,11 @@
+<launch>
+  <arg name="jtc_name" default="rh_hand_trajectory_controller/follow_trajectory"/>
+  <arg name="cmd_joint_states" default="cmd_joint_states"/>
+
+  <!-- shadowhand to cybergrasp remapper -->
+  <node pkg="sr_remappers" name="js_to_jtp" type="js_to_jtp.py" output="screen">
+    <param name="jtc_name" type="string"  value="$(arg jtc_name)" />
+    <remap from="cmd_joint_states" to="$(arg cmd_joint_states)"/>
+  </node>
+</launch>
+
