@@ -16,8 +16,6 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED system filesystem date_time thread)
 
-catkin_python_setup()
-
 ################################################
 ## Declare ROS messages, services and actions ##
 ################################################
