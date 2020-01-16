@@ -3,6 +3,7 @@
   <arg name="transposed" default="true"/>
   <arg name="legacy_abduction" default="false"/>
   <arg name="abduction_max" default="25.0"/>
+  <arg name="input_js" default="/cyberglove/calibrated/joint_states"/>
   <arg name="output_js" default="/cyberglove/remapped/joint_states"/>
 
   <!-- shadowhand to cybergrasp remapper -->
@@ -15,6 +16,7 @@
     <param name="abduction_max" type="double" value="$(arg abduction_max)" />
     <param name="legacy_abduction" type="bool" value="$(arg legacy_abduction)" />
     <remap from="/cyberglove/remapped/joint_states" to="$(arg output_js)" />
+    <remap from="/cyberglove/calibrated/joint_states" to="$(arg input_js)" />
   </node>
 </launch>
 
