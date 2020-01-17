@@ -129,8 +129,8 @@ void HumanhandToCybergloveRemapper::jointstatesCallback( const sensor_msgs::Join
 
 void HumanhandToCybergloveRemapper::getAbductionJoints( const sensor_msgs::JointStateConstPtr& msg, std::vector<double>& vect)
 {
-  double middleIndexAb = msg->position[8];
-  double ringMiddleAb = msg->position[11];
+  double middleIndexAb = msg->position[13];
+  double ringMiddleAb = msg->position[10];
   double pinkieRingAb = msg->position[14];
 
   // if the abduction sensors are less than 0, it is an artifact of the calibration (we don't want to consider anything smaller than 0 for these sensors)
