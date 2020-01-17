@@ -47,8 +47,8 @@
 
 namespace xml_calibration_parser
 {
-const float XmlCalibrationParser::lookup_precision = 1000.0f;
-const float XmlCalibrationParser::lookup_offset = 1.0f;
+const float XmlCalibrationParser::lookup_precision = 1.0f;
+const float XmlCalibrationParser::lookup_offset = 4096.0f;
 
 /**
  * The constructor: parses the given file and stores the calibration
@@ -192,7 +192,7 @@ int XmlCalibrationParser::build_calibration_table()
     // order the calibration vector by ascending values of raw_value
     //      ROS_ERROR("TODO: calibration vector not ordered yet");
 
-    ss << "lookup table : ";
+    ss << "lookup table : " << name;
 
     // setup the lookup table
     for (unsigned int index_lookup = 0; index_lookup < lookup_table.size(); ++index_lookup)
@@ -260,7 +260,7 @@ float XmlCalibrationParser::get_calibration_value(float position, std::string jo
   }
   else
   {
-    ROS_ERROR("%s is not calibrated", joint_name.c_str());
+    ROS_ERROR_ONCE("%s was not found in the calibration file", joint_name.c_str());
     return 1.0f;
   }
 }
@@ -283,8 +283,8 @@ int XmlCalibrationParser::return_index_from_raw_position(float raw_position)
 {
   if (raw_position < 0.0f)
     return 0;
-  if (raw_position > 1.0f)
-    return lookup_precision;
+  if (raw_position > lookup_offset)
+    return lookup_offset;
   return round(raw_position * lookup_precision);
 };
 
