@@ -90,6 +90,11 @@ void CybergloveCalibPublisher::callback(const sensor_msgs::JointStateConstPtr &m
   // int the cal_js message
   cal_js.name = msg->name;
   cal_js.header = msg->header;
+  // set velocity to 0.
+  cal_js.velocity.resize(msg->name.size(),0.0);
+  // set effort to 0.
+  cal_js.effort.resize(msg->name.size(),0.0);
+  cal_js.position.reserve(msg->name.size());
   ROS_INFO_ONCE("was there");
   // fill the joint_state msg with the calibrated data
   for (unsigned int index_joint = 0; index_joint < msg->name.size(); ++index_joint)
