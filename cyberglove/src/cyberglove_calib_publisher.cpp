@@ -68,7 +68,7 @@ CybergloveCalibPublisher::CybergloveCalibPublisher()
 
   // publishes raw JointState messages
   full_topic = prefix + "/raw/joint_states";
-  cyberglove_raw_sub = node.subscribe(full_topic, 1, &CybergloveCalibPublisher::callback ,this);
+  cyberglove_raw_sub = node.subscribe(full_topic, 1, &CybergloveCalibPublisher::callback ,this, ros::TransportHints().tcpNoDelay());
 }
 
 CybergloveCalibPublisher::~CybergloveCalibPublisher()
