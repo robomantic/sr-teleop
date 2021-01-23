@@ -185,6 +185,7 @@ void HumanhandToCybergloveRemapper::getAbductionJoints( const sensor_msgs::Joint
     // if there is space left on the index side and pinkie side)
     if (ringMiddleAb/2 + middleIndexAb <= abduction_max && ringMiddleAb/2 + pinkieRingAb <= abduction_max)
     {
+      ROS_DEBUG_STREAM("middle " << ringMiddleAb/2 + middleIndexAb << " and " << ringMiddleAb/2 + pinkieRingAb);
       //move little_abduction_joint further
       vect[7] = -middleIndexAb-(ringMiddleAb/2);
       //middle_abduction_joint
@@ -198,6 +199,7 @@ void HumanhandToCybergloveRemapper::getAbductionJoints( const sensor_msgs::Joint
     {
       if (middleIndexAb > pinkieRingAb) // saturate index first
       {
+        ROS_DEBUG_STREAM("saturate index " << middleIndexAb  << " and " << pinkieRingAb);
         //saturate index_abduction_joint to min
         vect[7] = -abduction_max ;
         // then move the other extremity to its max if needed
@@ -212,6 +214,7 @@ void HumanhandToCybergloveRemapper::getAbductionJoints( const sensor_msgs::Joint
       }
       else // saturate pinky first
       {
+        ROS_DEBUG_STREAM("saturate pinky " << middleIndexAb  << " and " << pinkieRingAb);
         //saturate little_abduction_joint to max + some extra
         vect[19] = abduction_max;
         // then move the other extremity to its max if needed
