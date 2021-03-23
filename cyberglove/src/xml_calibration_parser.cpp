@@ -47,7 +47,6 @@
 
 namespace xml_calibration_parser
 {
-const float XmlCalibrationParser::lookup_precision = 1000.0f;
 
 /**
  * The constructor: parses the given file and stores the calibration
@@ -170,7 +169,7 @@ std::vector<XmlCalibrationParser::Calibration> XmlCalibrationParser::parse_joint
  * Transform the calibration values to a lookup table for fast
  * processing of the calibration process.
  * NB: the lookup table ranges from 0 to 1
- * with a precision of 1/lookup_precision.
+ * with a precision of 1/max_lookup_index.
  *
  */
 int XmlCalibrationParser::build_calibration_table()
@@ -183,7 +182,7 @@ int XmlCalibrationParser::build_calibration_table()
 
     std::vector<Calibration> calib = jointsCalibrations[index_calib].calibrations;
 
-    std::vector<float> lookup_table(static_cast<int>(lookup_precision));
+    std::vector<float> lookup_table(max_lookup_index+1);
 
     if (calib.size() < 2)
       ROS_ERROR("Not enough points were defined to set up the calibration.");
@@ -280,11 +279,11 @@ float XmlCalibrationParser::linear_interpolate(float x, float x0, float y0, floa
 
 int XmlCalibrationParser::return_index_from_raw_position(float raw_position)
 {
-  if (raw_position < 0.0f)
+  if (raw_position <= 0.0f)
     return 0;
-  if (raw_position > 1.0f)
-    return lookup_precision;
-  return round(raw_position * lookup_precision);
+  if (raw_position >= 1.0f)
+    return max_lookup_index;
+  return round(raw_position * max_lookup_index);
 };
 
 }  // namespace xml_calibration_parser

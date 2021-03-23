@@ -94,8 +94,8 @@ protected:
 
   float linear_interpolate(float x, float x0, float y0, float x1, float y1);
 
-  // consts for the lookup tables
-  static const float lookup_precision;
+  // size of the lookup table
+  static const int max_lookup_index = 999;
 
   /**
    * rounds the given number
@@ -131,7 +131,7 @@ protected:
    */
   static inline float return_raw_position_from_index(int lookup_index)
   {
-    return static_cast<float>(lookup_index) / lookup_precision;
+    return static_cast<float>(lookup_index) / max_lookup_index;
   };
 };  // end class XmlCalibrationParser
 
