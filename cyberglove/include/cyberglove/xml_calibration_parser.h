@@ -96,7 +96,6 @@ protected:
 
   // consts for the lookup tables
   static const float lookup_precision;
-  static const float lookup_offset;
 
   /**
    * rounds the given number

@@ -48,7 +48,6 @@
 namespace xml_calibration_parser
 {
 const float XmlCalibrationParser::lookup_precision = 1000.0f;
-const float XmlCalibrationParser::lookup_offset = 1.0f;
 
 /**
  * The constructor: parses the given file and stores the calibration
@@ -170,7 +169,7 @@ std::vector<XmlCalibrationParser::Calibration> XmlCalibrationParser::parse_joint
 /**
  * Transform the calibration values to a lookup table for fast
  * processing of the calibration process.
- * NB: the lookup table ranges from 0 to +lookup_offset
+ * NB: the lookup table ranges from 0 to 1
  * with a precision of 1/lookup_precision.
  *
  */
@@ -184,7 +183,7 @@ int XmlCalibrationParser::build_calibration_table()
 
     std::vector<Calibration> calib = jointsCalibrations[index_calib].calibrations;
 
-    std::vector<float> lookup_table(static_cast<int>(lookup_offset) * static_cast<int>(lookup_precision));
+    std::vector<float> lookup_table(static_cast<int>(lookup_precision));
 
     if (calib.size() < 2)
       ROS_ERROR("Not enough points were defined to set up the calibration.");
@@ -260,7 +259,7 @@ float XmlCalibrationParser::get_calibration_value(float position, const std::str
   }
   else
   {
-    ROS_ERROR("%s is not calibrated", joint_name.c_str());
+    ROS_ERROR_THROTTLE(5, "%s is not calibrated", joint_name.c_str());
     return 1.0f;
   }
 }
