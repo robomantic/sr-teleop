@@ -66,7 +66,7 @@ CybergloveCalibPublisher::CybergloveCalibPublisher()
   std::string full_topic = prefix + "/calibrated/joint_states";
   cyberglove_pub = node.advertise<sensor_msgs::JointState>(full_topic, 2);
 
-  // publishes raw JointState messages
+  // subscribes raw JointState messages
   full_topic = prefix + "/raw/joint_states";
   cyberglove_raw_sub = node.subscribe(full_topic, 2, &CybergloveCalibPublisher::callback ,this, ros::TransportHints().tcpNoDelay());
 }
@@ -90,18 +90,18 @@ void CybergloveCalibPublisher::callback(const sensor_msgs::JointStateConstPtr &m
   // int the cal_js message
   cal_js.name = msg->name;
   cal_js.header = msg->header;
+#if 0 // We don't have meaningful velocity or effort information, so don't publish
   // set velocity to 0.
   cal_js.velocity.resize(msg->name.size(),0.0);
   // set effort to 0.
   cal_js.effort.resize(msg->name.size(),0.0);
+#endif
   cal_js.position.reserve(msg->name.size());
   // fill the joint_state msg with the calibrated data
   for (unsigned int index_joint = 0; index_joint < msg->name.size(); ++index_joint)
   {
     float calibration_value = calibration_parser.get_calibration_value(msg->position[index_joint], msg->name[index_joint]);
     cal_js.position.push_back(calibration_value);
-    // set velocity to 0.
-    cal_js.velocity.push_back(0.0);
   }
 
   // publish the msgs
