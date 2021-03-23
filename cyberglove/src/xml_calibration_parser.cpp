@@ -247,7 +247,7 @@ float XmlCalibrationParser::compute_lookup_value(int index, std::vector<XmlCalib
                             calib[calib.size()].raw_value, calib[calib.size()].calibrated_value);
 }
 
-float XmlCalibrationParser::get_calibration_value(float position, std::string joint_name)
+float XmlCalibrationParser::get_calibration_value(float position, const std::string& joint_name)
 {
   mapType::iterator iter = joints_calibrations_map.find(joint_name);
 
@@ -288,15 +288,4 @@ int XmlCalibrationParser::return_index_from_raw_position(float raw_position)
   return round(raw_position * lookup_precision);
 };
 
-int XmlCalibrationParser::round(float number)
-{
-  // we only have positive numbers
-  return static_cast<int>(floor(number + 0.5));
-  // return number < 0.0 ? ceil(number - 0.5) : floor(number + 0.5);
-}
-
-std::vector<XmlCalibrationParser::JointCalibration> XmlCalibrationParser::getJointsCalibrations()
-{
-  return jointsCalibrations;
-}
 }  // namespace xml_calibration_parser
