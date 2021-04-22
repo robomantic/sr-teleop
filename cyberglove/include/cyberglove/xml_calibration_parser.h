@@ -131,7 +131,7 @@ protected:
    */
   static inline float return_raw_position_from_index(int lookup_index)
   {
-    return static_cast<float>(lookup_index) / max_lookup_index;
+    return static_cast<float>(lookup_index) / (max_lookup_index+1);
   };
 };  // end class XmlCalibrationParser
 
