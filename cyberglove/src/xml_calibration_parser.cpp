@@ -177,10 +177,10 @@ int XmlCalibrationParser::build_calibration_table()
   std::ostringstream ss;
   for (unsigned int index_calib = 0; index_calib < jointsCalibrations.size(); ++index_calib)
   {
-    std::string name = jointsCalibrations[index_calib].name;
+    const std::string& name = jointsCalibrations[index_calib].name;
     ROS_DEBUG_STREAM(name);
 
-    std::vector<Calibration> calib = jointsCalibrations[index_calib].calibrations;
+    const std::vector<Calibration>& calib = jointsCalibrations[index_calib].calibrations;
 
     std::vector<float> lookup_table(max_lookup_index+1);
 
@@ -203,7 +203,7 @@ int XmlCalibrationParser::build_calibration_table()
     ss << std::endl;
 
     // add the values to the map
-    joints_calibrations_map[name] = lookup_table;
+    joints_calibrations_map[name] = std::move(lookup_table);
     // joints_calibrations_map.insert(std::pair <std::string, std::vector<float> >(name, lookup_table));
   }
   ROS_DEBUG_STREAM(ss.str());
@@ -221,7 +221,7 @@ int XmlCalibrationParser::build_calibration_table()
  *
  * @return the value to be stored in the lookup table
  */
-float XmlCalibrationParser::compute_lookup_value(int index, std::vector<XmlCalibrationParser::Calibration> calib)
+float XmlCalibrationParser::compute_lookup_value(int index, const std::vector<XmlCalibrationParser::Calibration>& calib)
 {
   float raw_pos = return_raw_position_from_index(index);
 
